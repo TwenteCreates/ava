@@ -8,21 +8,21 @@
 				</div>
 				<div v-else-if="message.sender === `sender-1`" class="message-content">
 					<div class="sender">
-						<img alt="Sender's Avatar" src="/bot.svg">
-						</div>
+						<img alt="Sender's Avatar" :src="message.avatar">
+					</div>
 					<div class="message">{{message.text}}</div>
 				</div>
 				<div v-else class="message-content">
 					<div class="message">{{message.text}}</div>
 					<div class="sender">
-						<img alt="Sender's Avatar" src="https://randomuser.me/api/portraits/men/14.jpg">
+						<img alt="Sender's Avatar" :src="message.avatar">
 					</div>
 				</div>
 			</div>
-			<div class="message-block typing" v-if="typing">
+			<div class="message-block sender-1 typing" v-if="typing">
 				<div class="message-content">
 					<div class="sender">
-						<img alt="Sender's Avatar" src="https://randomuser.me/api/portraits/women/14.jpg">
+						<img alt="Sender's Avatar" :src="currentImage">
 						</div>
 					<div class="message">
 						<span class="ellipsis-1">&bullet;</span>
@@ -56,12 +56,24 @@ export default {
 	},
 	data: () => {
 		return {
+			currentImage: "/bot.svg",
 			typing: false,
 			reply: "",
 			messages: []
 		};
 	},
 	methods: {
+		respond(text) {
+			return new Promise((resolve, reject) => {
+				setTimeout(() => {
+					this.typing = true;
+				}, 1000);
+				setTimeout(() => {
+					this.typing = false;
+					resolve("Hello, world");
+				}, 2000);
+			});
+		},
 		botSays(text) {
 			if (this.messages.length > 0) {
 				this.messages[this.messages.length - 1].next = "sender-1";
@@ -69,11 +81,13 @@ export default {
 			this.messages.push({
 				sender: "sender-1",
 				text: text,
+				avatar: this.currentImage,
 				previous:
 					this.messages.length > 0
 						? this.messages[this.messages.length - 1].sender
 						: "unknown"
 			});
+			this.$store.commit("update", this.messages);
 		},
 		sendMessage() {
 			if (!this.reply || !this.reply.trim()) return;
@@ -90,6 +104,7 @@ export default {
 			this.messages.push({
 				sender: "sender-2",
 				text: this.reply,
+				avatar: "https://randomuser.me/api/portraits/men/14.jpg",
 				previous:
 					this.messages.length > 0
 						? this.messages[this.messages.length - 1].sender
@@ -102,6 +117,11 @@ export default {
 					"main"
 				).scrollHeight;
 			}, 1);
+			this.respond()
+				.then(response => {
+					this.botSays(response);
+				})
+				.catch(() => {});
 		}
 	},
 	components: {
