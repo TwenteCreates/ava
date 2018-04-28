@@ -1,9 +1,9 @@
 {
   "name": "talanx-app",
   "version": "1.0.0",
-  "description": "Vue.js app starter with Poi and dev conf",
+  "description": "talanx-hack",
   "main": "index.js",
-  "repository": "https://github.com/AnandChowdhary/poi-starter",
+  "repository": "https://github.com/AnandChowdhary/talanx-hack",
   "author": "Anand Chowdhary (maiL@anandchowdhary.com)",
   "license": "MIT",
   "scripts": {

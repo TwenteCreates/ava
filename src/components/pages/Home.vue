@@ -67,6 +67,16 @@
 <script>
 import FontAwesomeIcon from "@fortawesome/vue-fontawesome";
 import replies from "../../modules/replies";
+import firebase from "firebase";
+firebase.initializeApp({
+	apiKey: "AIzaSyDZGcrdh48alSZlUoiQSpXP0fktcVPJf2w",
+	authDomain: "talanx-hack.firebaseapp.com",
+	databaseURL: "https://talanx-hack.firebaseio.com",
+	projectId: "talanx-hack",
+	storageBucket: "talanx-hack.appspot.com",
+	messagingSenderId: "784808067653"
+});
+const database = firebase.database();
 function getOffset(el) {
 	var _x = 0;
 	var _y = 0;
@@ -97,6 +107,9 @@ export default {
 		} else {
 			this.options = this.messages[this.messages.length - 1].options;
 		}
+		setTimeout(() => {
+			this.$el.querySelector("main").scrollTop = this.$el.querySelector("main").scrollHeight;
+		}, 1);
 	},
 	data: () => {
 		return {
