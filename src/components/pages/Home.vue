@@ -32,13 +32,23 @@
 				</div>
 			</div>
 		</main>
-		<footer class="reply-box">
-			<form @submit.prevent="sendMessage">
-				<input type="text" v-model="reply" placeholder="Enter a message...">
-				<button type="submit">
-					<font-awesome-icon icon="arrow-right" />
-				</button>
-			</form>
+		<footer>
+			<div class="options" v-if="options.length > 0">
+				<ul>
+					<li v-for="option in options">
+						<button>{{option}}</button>
+					</li>
+					<li><button>This is a longer option</button></li>
+				</ul>
+			</div>
+			<div class="reply-box">
+				<form @submit.prevent="sendMessage">
+					<input type="text" v-model="reply" placeholder="Enter a message...">
+					<button type="submit">
+						<font-awesome-icon icon="arrow-right" />
+					</button>
+				</form>
+			</div>
 		</footer>
 	</section>
 </template>
@@ -51,7 +61,9 @@ export default {
 		if (this.messages.length === 0) {
 			this.botSays(`Hi 👋`);
 			this.botSays(`I'm Ava from Talanx`);
-			this.botSays(`How can I help?`);
+			this.botSays(`How can I help?`, ["Insurance claim", "Help"]);
+		} else {
+			this.options = this.messages[this.messages.length - 1].options;
 		}
 	},
 	data: () => {
@@ -59,26 +71,57 @@ export default {
 			currentImage: "/bot.svg",
 			typing: false,
 			reply: "",
-			messages: []
+			messages: [],
+			voice: null,
+			options: []
 		};
 	},
 	methods: {
 		respond(text) {
+			let currentTime = new Date().getTime();
 			return new Promise((resolve, reject) => {
 				setTimeout(() => {
 					this.typing = true;
-				}, 1000);
+				}, 200);
+				let result = "Hello, world";
 				setTimeout(() => {
 					this.typing = false;
-					resolve("Hello, world");
-				}, 2000);
+					resolve({
+						text: result,
+						options: ["Insurance claim", "Help"]
+					});
+				}, new Date().getTime() - currentTime > 1000 ? 0 : 1000 - (new Date().getTime() - currentTime));
 			});
 		},
-		botSays(text) {
+		botSays(text, options = []) {
 			if (this.messages.length > 0) {
 				this.messages[this.messages.length - 1].next = "sender-1";
 			}
-			this.messages.push({
+			if ("speechSynthesis" in window) {
+				let voices = window.speechSynthesis.getVoices();
+				const utterThis = new SpeechSynthesisUtterance(
+					text.replace(
+						/([\uE000-\uF8FF]|\uD83C[\uDF00-\uDFFF]|\uD83D[\uDC00-\uDDFF])/g,
+						""
+					)
+				);
+				let a = setInterval(() => {
+					voices = window.speechSynthesis.getVoices();
+					voices.forEach(voice => {
+						if (voice.name === "Google US English") {
+							utterThis.voice = voice;
+						}
+					});
+					if (voices.length > 0) {
+						clearInterval(a);
+						window.speechSynthesis.speak(utterThis);
+					}
+				}, 10);
+				setTimeout(() => {
+					clearInterval(a);
+				}, 2000);
+			}
+			const message = {
 				sender: "sender-1",
 				text: text,
 				avatar: this.currentImage,
@@ -86,7 +129,12 @@ export default {
 					this.messages.length > 0
 						? this.messages[this.messages.length - 1].sender
 						: "unknown"
-			});
+			};
+			if (options) {
+				message.options = options;
+				this.options = options;
+			}
+			this.messages.push(message);
 			this.$store.commit("update", this.messages);
 		},
 		sendMessage() {
@@ -119,7 +167,12 @@ export default {
 			}, 1);
 			this.respond()
 				.then(response => {
-					this.botSays(response);
+					this.botSays(response.text, response.options);
+					setTimeout(() => {
+						this.$el.querySelector("main").scrollTop = this.$el.querySelector(
+							"main"
+						).scrollHeight;
+					}, 1);
 				})
 				.catch(() => {});
 		}
@@ -260,8 +313,10 @@ main {
 	}
 }
 
-.reply-box {
+footer {
 	z-index: 1000;
+}
+.reply-box {
 	box-shadow: 0 -0.5rem 1rem rgba(0, 100, 100, 0.05);
 	form {
 		display: flex;
@@ -280,6 +335,42 @@ main {
 	}
 	input {
 		width: 100%;
+	}
+}
+.options {
+	position: relative;
+	&::before {
+		content: "";
+		position: absolute;
+		left: 0;
+		right: 0;
+		height: 2rem;
+		top: -2rem;
+		background: linear-gradient(transparent, #f3f6f7);
+	}
+	ul {
+		background: #f3f6f7;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+		white-space: nowrap;
+		width: 100%;
+		overflow-x: auto;
+		li {
+			display: inline-block;
+			margin: 0;
+			padding: 5px 0 1rem 1rem;
+			&:last-of-type {
+				padding-right: 1rem;
+			}
+			button {
+				background-color: #cb0056;
+				color: #fff;
+				border: none;
+				padding: 0.5rem 1rem;
+				border-radius: 25px;
+			}
+		}
 	}
 }
 </style>
