@@ -1,4 +1,4 @@
-# Project Name
+# Ava
 
 ## Development
 
@@ -20,6 +20,8 @@ yarn start:dev
 
 ### Production
 
+Build and deploy to Firebase hosting.
+
 ```bash
-yarn build
+yarn deploy
 ```

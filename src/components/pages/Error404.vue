@@ -1,3 +1,5 @@
 <template>
-	<div>Page</div>
+	<section>
+		Error 404
+	</section>
 </template>
