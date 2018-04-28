@@ -136,8 +136,11 @@ export default {
 				});
 			}, 1);
 			setTimeout(() => {
-				const element = document.querySelector(".class-temp .message-inner");
-				element.parentNode.querySelector(".class-temp .sender img").style.opacity = "1";
+				let element = document.querySelector(".class-temp .message-inner");
+				element.parentNode.parentNode.querySelector(
+					".class-temp .sender img"
+				).style.opacity =
+					"1";
 				const bound = getOffset(element);
 				animator.style.transition = `1s`;
 				animator.style.top = `${bound.top - this.$el.querySelector("main").scrollTop}px`;
@@ -174,7 +177,7 @@ export default {
 				let result = "insurance_claim";
 				if (replies[result]) {
 					if (replies[result].length > 1) {
-						const texts = replies[result];
+						const texts = replies[result].slice();
 						const untexts = replies[result][0];
 						texts.shift();
 						this.nextMessages = texts;
@@ -197,7 +200,6 @@ export default {
 			});
 		},
 		botSays(text, options = []) {
-			console.log("Bot staing", text);
 			if (this.messages.length > 0) {
 				this.messages[this.messages.length - 1].next = "sender-1";
 			}
@@ -277,7 +279,6 @@ export default {
 							"main"
 						).scrollHeight;
 					}, 1);
-					console.log(this.nextMessages);
 					let l = this.nextMessages.length;
 					let count = 0;
 					let x = setInterval(() => {
