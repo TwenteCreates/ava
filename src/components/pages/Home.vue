@@ -48,7 +48,7 @@
 			</transition>
 			<div class="reply-box">
 				<form @submit.prevent="sendMessage">
-					<input type="text" v-model="reply" placeholder="Enter a message...">
+					<input type="text" v-model="reply" @keyup="textChanged" placeholder="Enter a message...">
 					<button type="button" v-if="!speaking" @click="startSpeech">
 						<font-awesome-icon icon="microphone" fixed-width />
 					</button>
@@ -65,9 +65,10 @@
 </template>
 
 <script>
+import firebase from "firebase";
+import chrono from "chrono-node";
 import FontAwesomeIcon from "@fortawesome/vue-fontawesome";
 import replies from "../../modules/replies";
-import firebase from "firebase";
 firebase.initializeApp({
 	apiKey: "AIzaSyDZGcrdh48alSZlUoiQSpXP0fktcVPJf2w",
 	authDomain: "talanx-hack.firebaseapp.com",
@@ -87,7 +88,6 @@ function getOffset(el) {
 	}
 	return { top: _y, left: _x };
 }
-
 export default {
 	mounted() {
 		// fetch("https://myapp-thankful-chimpanzee.cfapps.eu10.hana.ondemand.com/force-refresh-chat")
@@ -99,17 +99,27 @@ export default {
 		// 			.catch(() => {});
 		// 	})
 		// 	.catch(() => {});
-		this.messages = this.$store.state.messages;
-		if (this.messages.length === 0) {
-			this.botSays(`Hi 👋`);
-			this.botSays(`I'm Ava from Talanx`);
-			this.botSays(`How can I help?`, ["Insurance claim", "Help"]);
-		} else {
-			this.options = this.messages[this.messages.length - 1].options;
-		}
-		setTimeout(() => {
-			this.$el.querySelector("main").scrollTop = this.$el.querySelector("main").scrollHeight;
-		}, 1);
+		const messages = firebase.database().ref("/conversation");
+		messages.once("value").then(snapshot => {
+			this.messages = snapshot.val();
+			if (this.messages.length === 0) {
+				this.botSays(`Hi 👋`);
+				this.botSays(`I'm Ava from Talanx`);
+				this.botSays(`How can I help?`, ["Insurance claim", "Help"]);
+			} else {
+				this.options = this.messages[this.messages.length - 1].options;
+			}
+			setTimeout(() => {
+				this.$el.querySelector("main").scrollTop = this.$el.querySelector(
+					"main"
+				).scrollHeight;
+			}, 1);
+		});
+		messages.on("value", snapshot => {
+			if (snapshot.val()) {
+				this.messages = snapshot.val();
+			}
+		});
 	},
 	data: () => {
 		return {
@@ -125,6 +135,26 @@ export default {
 		};
 	},
 	methods: {
+		textChanged() {
+			if (this.currentQ === "place_name") {
+				fetch(
+					`https://myapp-thankful-chimpanzee.cfapps.eu10.hana.ondemand.com/map-autocomplete?text=${encodeURIComponent(
+						this.reply
+					)}`
+				)
+					.then(response => response.json())
+					.then(json => {
+						this.options = [];
+						json.predictions.forEach(place => {
+							this.options.push(place.description);
+						});
+					})
+					.catch(() => {});
+			}
+		},
+		saveMessages() {
+			database.ref("/conversation").set(this.messages);
+		},
 		animateButton(text) {
 			if (!this.messages) return;
 			let animator = document.createElement("div");
@@ -196,35 +226,58 @@ export default {
 			return new Promise((resolve, reject) => {
 				this.typing = true;
 				if (this.currentQ !== null) {
-					switch (this.currentQ) {
-						case "covered_in_insurance":
-							console.log("YOU SAID", text);
-							if (text.toLowerCase().contains("yes")) {
-								resolve();
-							} else {
+					setTimeout(() => {
+						switch (this.currentQ) {
+							case "place_name":
 								resolve({
-									text:
-										"Okay, let me know if there's anything else I can do for you 😊"
+									text: "Thanks, that's all I need 👌"
 								});
-							}
-							break;
-						case "insurance_claim":
-							this.nextMessages = [
-								{
-									text: "Could you tell us more about the incident?"
+								this.nextMessages = [
+									{
+										text: "I'm inviting my colleague to approve your request"
+									}
+								];
+								this.currentQ = null;
+								break;
+							case "when_happened":
+								resolve({
+									text: "Okay, any idea where it happened?"
+								});
+								this.currentQ = "place_name";
+								break;
+							case "covered_in_insurance":
+								if (text.toLowerCase().includes("yes")) {
+									resolve({
+										text: "When this this incident happen?",
+										options: ["Today", "Yesterday", "April 28"]
+									});
+									this.currentQ = "when_happened";
+								} else {
+									resolve({
+										text:
+											"Okay, let me know if there's anything else I can do for you 😊"
+									});
+									this.currentQ = null;
 								}
-							];
-							resolve({
-								text: `${
-									this.messages[this.messages.length - 1].text
-								} insurance, sounds good`
-							});
-							this.currentQ = null;
-							break;
-						default:
-							this.currentQ = null;
-							break;
-					}
+								break;
+							case "insurance_claim":
+								this.nextMessages = [
+									{
+										text: "Could you tell us more about the incident?"
+									}
+								];
+								resolve({
+									text: `${
+										this.messages[this.messages.length - 1].text
+									} insurance, sounds good`
+								});
+								this.currentQ = null;
+								break;
+							default:
+								this.currentQ = null;
+								break;
+						}
+					}, new Date().getTime() - currentTime > 1000 ? 0 : 1000 - (new Date().getTime() - currentTime));
 				} else {
 					fetch(
 						`https://myapp-thankful-chimpanzee.cfapps.eu10.hana.ondemand.com/get-answer?text=${encodeURIComponent(
@@ -239,7 +292,7 @@ export default {
 							if (answer.attributes.ANSWER_TEXT) {
 								result = answer.attributes.ANSWER_TEXT;
 								console.log("RESULT", result);
-								if (["covered_in_insurance", "insurance_claim"].includes(result)) {
+								if (["insurance_claim", "covered_in_insurance"].includes(result)) {
 									this.currentQ = result;
 								}
 							}
@@ -268,7 +321,7 @@ export default {
 						})
 						.catch(error => {
 							resolve({
-								text: "I wasn't able to answer your query"
+								text: "🙂"
 							});
 							this.typing = false;
 						});
@@ -317,7 +370,7 @@ export default {
 				this.options = options;
 			}
 			this.messages.push(message);
-			this.$store.commit("update", this.messages);
+			this.saveMessages();
 		},
 		sendMessage(reply = this.reply) {
 			if (typeof reply !== "string") reply = this.reply;
@@ -325,7 +378,7 @@ export default {
 			if (!reply || !reply.trim()) return;
 			if (reply.toLowerCase() === "clear") {
 				this.messages = [];
-				this.$store.commit("update", this.messages);
+				this.saveMessages();
 				location.reload();
 				return;
 			}
@@ -341,7 +394,7 @@ export default {
 						? this.messages[this.messages.length - 1].sender
 						: "unknown"
 			});
-			this.$store.commit("update", this.messages);
+			this.saveMessages();
 			setTimeout(() => {
 				this.$el.querySelector("main").scrollTop = this.$el.querySelector(
 					"main"
@@ -349,7 +402,11 @@ export default {
 			}, 1);
 			if (this.currentQ) {
 				const updator = {};
-				updator[this.currentQ] = reply;
+				if (this.currentQ === "when_happened") {
+					updator[this.currentQ] = chrono.parseDate(reply);
+				} else {
+					updator[this.currentQ] = reply;
+				}
 				database.ref("data").update(updator);
 			}
 			this.respond(reply)
