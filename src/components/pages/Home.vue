@@ -19,7 +19,7 @@
 					</div>
 				</div>
 			</div>
-			<div class="message-block typing">
+			<div class="message-block typing" v-if="typing">
 				<div class="message-content">
 					<div class="sender">
 						<img alt="Sender's Avatar" src="https://randomuser.me/api/portraits/women/14.jpg">
@@ -46,67 +46,57 @@
 <script>
 import FontAwesomeIcon from "@fortawesome/vue-fontawesome";
 export default {
+	mounted() {
+		this.messages = this.$store.state.messages;
+		if (this.messages.length === 0) {
+			this.botSays(`Hi 👋`);
+			this.botSays(`I'm Ava from Talanx`);
+			this.botSays(`How can I help?`);
+		}
+	},
 	data: () => {
 		return {
+			typing: false,
 			reply: "",
-			messages: [
-				{
-					sender: "sender-1",
-					text: `Hi 👋`,
-					next: "sender-1"
-				},
-				{
-					sender: "sender-1",
-					text: `How are you doing?`,
-					next: "sender-2",
-					previous: "sender-1"
-				},
-				{
-					sender: "sender-2",
-					text: `I'm doing great, how are you?`,
-					next: "sender-1",
-					previous: "sender-1"
-				},
-				{
-					sender: "sender-1",
-					text: `Awesome!`,
-					next: "sender-2",
-					previous: "sender-2"
-				},
-				{
-					sender: "sender-2",
-					text: `Cool!`,
-					next: "sender-2",
-					previous: "sender-1"
-				},
-				{
-					sender: "sender-2",
-					text: `So, tell me something...`,
-					next: "sender-2",
-					previous: "sender-2"
-				},
-				{
-					sender: "sender-2",
-					text: `What can you do?`,
-					previous: "sender-2",
-					next: "sender-1"
-				},
-				{
-					sender: "meta",
-					text: `Isabella has joined the conversation`
-				}
-			]
+			messages: []
 		};
 	},
 	methods: {
+		botSays(text) {
+			if (this.messages.length > 0) {
+				this.messages[this.messages.length - 1].next = "sender-1";
+			}
+			this.messages.push({
+				sender: "sender-1",
+				text: text,
+				previous:
+					this.messages.length > 0
+						? this.messages[this.messages.length - 1].sender
+						: "unknown"
+			});
+		},
 		sendMessage() {
-			this.messages[this.messages.length - 1].next = "sender-2";
+			if (!this.reply || !this.reply.trim()) return;
+			if (this.reply.toLowerCase() === "clear") {
+				this.messages = [];
+				this.reply = "";
+				this.$store.commit("update", this.messages);
+				location.reload();
+				return;
+			}
+			if (this.messages.length > 0) {
+				this.messages[this.messages.length - 1].next = "sender-2";
+			}
 			this.messages.push({
 				sender: "sender-2",
 				text: this.reply,
-				previous: this.messages[this.messages.length - 1].sender
+				previous:
+					this.messages.length > 0
+						? this.messages[this.messages.length - 1].sender
+						: "unknown"
 			});
 			this.reply = "";
+			this.$store.commit("update", this.messages);
 			setTimeout(() => {
 				this.$el.querySelector("main").scrollTop = this.$el.querySelector(
 					"main"

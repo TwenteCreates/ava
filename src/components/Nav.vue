@@ -47,6 +47,7 @@ export default {
 			text-align: center;
 			a {
 				color: inherit;
+				transition: 0.3s;
 				font-size: 80%;
 				display: block;
 				padding: 0.5rem 0 0.25rem 0;
