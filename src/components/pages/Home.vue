@@ -10,10 +10,12 @@
 					<div class="sender">
 						<img alt="Sender's Avatar" :src="message.avatar">
 					</div>
-					<div class="message">{{message.text}}</div>
+					<div class="message">
+						<div class="message-inner">{{message.text}}</div></div>
 				</div>
 				<div v-else class="message-content">
-					<div class="message">{{message.text}}</div>
+					<div class="message">
+						<div class="message-inner">{{message.text}}</div></div>
 					<div class="sender">
 						<img alt="Sender's Avatar" :src="message.avatar">
 					</div>
@@ -25,9 +27,11 @@
 						<img alt="Sender's Avatar" :src="currentImage">
 						</div>
 					<div class="message">
-						<span class="ellipsis-1">&bullet;</span>
-						<span class="ellipsis-2">&bullet;</span>
-						<span class="ellipsis-3">&bullet;</span>
+						<div class="message-inner">
+							<span class="ellipsis-1">&bullet;</span>
+							<span class="ellipsis-2">&bullet;</span>
+							<span class="ellipsis-3">&bullet;</span>
+						</div>
 					</div>
 				</div>
 			</div>
@@ -62,6 +66,7 @@
 
 <script>
 import FontAwesomeIcon from "@fortawesome/vue-fontawesome";
+import replies from "../../modules/replies";
 function getOffset(el) {
 	var _x = 0;
 	var _y = 0;
@@ -92,13 +97,13 @@ export default {
 			speaking: false,
 			messages: [],
 			voice: null,
-			options: []
+			options: [],
+			nextMessages: []
 		};
 	},
 	methods: {
 		animateButton(text) {
 			if (!this.messages) return;
-			console.log("Your selected", text);
 			let animator = document.createElement("div");
 			animator.innerHTML = text;
 			animator.classList.add("animator");
@@ -131,7 +136,7 @@ export default {
 				});
 			}, 1);
 			setTimeout(() => {
-				const element = document.querySelector(".class-temp .message");
+				const element = document.querySelector(".class-temp .message-inner");
 				element.parentNode.querySelector(".class-temp .sender img").style.opacity = "1";
 				const bound = getOffset(element);
 				animator.style.transition = `1s`;
@@ -166,7 +171,22 @@ export default {
 				setTimeout(() => {
 					this.typing = true;
 				}, 200);
-				let result = "Hello, world";
+				let result = "insurance_claim";
+				if (replies[result]) {
+					if (replies[result].length > 1) {
+						const texts = replies[result];
+						const untexts = replies[result][0];
+						texts.shift();
+						this.nextMessages = texts;
+						resolve(untexts);
+					} else {
+						resolve(replies[result][0]);
+					}
+				} else {
+					resolve({
+						text: "I'm sorry, I don't understand"
+					});
+				}
 				setTimeout(() => {
 					this.typing = false;
 					resolve({
@@ -177,6 +197,7 @@ export default {
 			});
 		},
 		botSays(text, options = []) {
+			console.log("Bot staing", text);
 			if (this.messages.length > 0) {
 				this.messages[this.messages.length - 1].next = "sender-1";
 			}
@@ -256,6 +277,26 @@ export default {
 							"main"
 						).scrollHeight;
 					}, 1);
+					console.log(this.nextMessages);
+					let l = this.nextMessages.length;
+					let count = 0;
+					let x = setInterval(() => {
+						if (count === l) {
+							this.nextMessages = [];
+							clearInterval(x);
+							return;
+						}
+						this.botSays(
+							this.nextMessages[count].text,
+							this.nextMessages[count].options
+						);
+						setTimeout(() => {
+							this.$el.querySelector("main").scrollTop = this.$el.querySelector(
+								"main"
+							).scrollHeight;
+						}, 1);
+						count++;
+					}, 1000);
 				})
 				.catch(() => {});
 		}
@@ -272,12 +313,19 @@ main {
 }
 
 .message-block {
+	.message-content {
+		display: flex;
+		justify-content: flex-start;
+	}
 	.message {
-		background-color: #fff;
-		display: inline-block;
-		padding: 0.75rem 1rem;
-		box-shadow: 0 0.5rem 1rem rgba(0, 100, 100, 0.1);
-		border-radius: 25px;
+		flex: 1 0 0;
+		.message-inner {
+			background-color: #ffffff;
+			display: inline-block;
+			padding: 0.75rem 1rem;
+			box-shadow: 0 0.5rem 1rem rgba(0, 100, 100, 0.1);
+			border-radius: 25px;
+		}
 		.emoji {
 			font-size: 50%;
 			display: inline-block;
@@ -286,8 +334,8 @@ main {
 		}
 	}
 	.sender {
-		float: left;
 		margin-right: 0.5rem;
+		width: 25px;
 		img {
 			width: 25px;
 			height: 25px;
@@ -295,7 +343,7 @@ main {
 		}
 	}
 	&.sender-2 {
-		.message {
+		.message-inner {
 			background-color: #cb0056;
 			color: #fff;
 		}
@@ -319,12 +367,11 @@ main {
 		}
 	}
 	&.sender-2 {
-		> div {
+		.message {
 			display: flex;
 			justify-content: flex-end;
 		}
 		.sender {
-			float: right;
 			margin-right: 0;
 			margin-left: 0.5rem;
 		}
