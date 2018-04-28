@@ -194,13 +194,21 @@ export default {
 			this.options = [];
 			let currentTime = new Date().getTime();
 			return new Promise((resolve, reject) => {
-				setTimeout(() => {
-					this.typing = true;
-				}, 200);
+				this.typing = true;
 				if (this.currentQ !== null) {
 					switch (this.currentQ) {
+						case "covered_in_insurance":
+							console.log("YOU SAID", text);
+							if (text.toLowerCase().contains("yes")) {
+								resolve();
+							} else {
+								resolve({
+									text:
+										"Okay, let me know if there's anything else I can do for you 😊"
+								});
+							}
+							break;
 						case "insurance_claim":
-							this.currentQ;
 							this.nextMessages = [
 								{
 									text: "Could you tell us more about the incident?"
@@ -211,6 +219,7 @@ export default {
 									this.messages[this.messages.length - 1].text
 								} insurance, sounds good`
 							});
+							this.currentQ = null;
 							break;
 						default:
 							this.currentQ = null;
@@ -226,16 +235,12 @@ export default {
 						.then(json => {
 							let result = "unknown";
 							const answers = json.answers;
-							console.log(answers, answers.length);
-							for (let i = 0; i < answers.length; i++) {
-								let answer = answers[i];
-								console.log(answer);
-								if (answer.attributes.ANSWER_TEXT) {
-									result = answer.attributes.ANSWER_TEXT;
-									console.log("RESULT", result);
-									if (result === "insurance_claim") {
-										this.currentQ = "insurance_claim";
-									}
+							const answer = answers[answers.length - 1];
+							if (answer.attributes.ANSWER_TEXT) {
+								result = answer.attributes.ANSWER_TEXT;
+								console.log("RESULT", result);
+								if (["covered_in_insurance", "insurance_claim"].includes(result)) {
+									this.currentQ = result;
 								}
 							}
 							if (replies[result]) {
@@ -342,6 +347,11 @@ export default {
 					"main"
 				).scrollHeight;
 			}, 1);
+			if (this.currentQ) {
+				const updator = {};
+				updator[this.currentQ] = reply;
+				database.ref("data").update(updator);
+			}
 			this.respond(reply)
 				.then(response => {
 					this.botSays(response.text, response.options);
@@ -450,28 +460,28 @@ main {
 		}
 	}
 	&.sender-1.next-sender-1 {
-		.message {
+		.message-inner {
 			border-bottom-left-radius: 15px;
 		}
 		+ div {
-			.message {
+			.message-inner {
 				border-top-left-radius: 15px;
 			}
 		}
 	}
 	&.sender-2.next-sender-2 {
-		.message {
+		.message-inner {
 			border-bottom-right-radius: 15px;
 		}
 		+ div {
-			.message {
+			.message-inner {
 				border-top-right-radius: 15px;
 			}
 		}
 	}
 	&.sender-1.next-sender-1.previous-sender-1,
 	&.sender-2.next-sender-2.previous-sender-2 {
-		.message {
+		.message-inner {
 			border-top-right-radius: 15px;
 			border-bottom-right-radius: 15px;
 		}
