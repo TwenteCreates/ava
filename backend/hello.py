@@ -148,8 +148,11 @@ def authIbenta():
 #called every time a new message is sent
 @app.route('/force-refresh-chat')
 def refreshTokenIbenta():
+    return _refreshTokenIbenta(forced=True)
+
+def _refreshTokenIbenta(forced=False):
     # import pdb; pdb.set_trace()
-    if inbenta_authorization_token == "":
+    if forced or inbenta_authorization_token == "" :
         authIbenta()
     body = {}
     headers =  {
@@ -179,7 +182,7 @@ def startNewSessionIbenta():
                 "ANSWER_TEXT"
             ],
             "maxOptions": 4,
-            "maxRelatedContents": 2
+            "maxRelatedContents": 1
         },
         "lang": "de"
     }
@@ -206,6 +209,7 @@ def getResponseFromIbenta():
     }
     response = requests.post(INBENTA_TOKEN_MESSAGEURL_PREFIX+'/message', json=body, headers=headers)
     assert response.status_code == 200
+    _refreshTokenIbenta(forced=False) #refresh the token here, but don't force it
     return jsonify(response.json())
 
 if __name__ == '__main__':
