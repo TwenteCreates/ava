@@ -18,7 +18,7 @@ translator = Translator()
 port = int(os.getenv("PORT", 9099))
 
 #Precire API
-precire_api_key = str(os.getenv("PRECIRE_API", ""))
+precire_api_key = str(os.getenv("PRECIRE_API", "")) #required
 
 #OptiPay API
 optiopay_token = str(os.getenv("OPTIOPAY_TOKEN", ""))
