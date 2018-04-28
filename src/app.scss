@@ -1,0 +1,81 @@
+@import "./modules/scss/sanitize";
+
+// Global styles
+
+body {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu",
+		"Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+	background-color: #fdfbff;
+}
+
+img {
+	max-width: 100%;
+}
+
+p:last-child {
+	margin-bottom: 0;
+}
+
+// Vue.js Animations
+
+.fade-enter-active,
+.fade-leave-active {
+	transition: opacity 0.2s;
+}
+.fade-enter,
+.fade-leave-to {
+	opacity: 0;
+}
+
+// Chat
+
+main {
+	padding: 1rem;
+}
+
+.message-block {
+	.message {
+		background-color: #fff;
+		display: inline-block;
+		padding: 0.75rem 1rem;
+		box-shadow: 0 0.5rem 1rem rgba(0, 100, 100, 0.1);
+		border-radius: 100px;
+		.emoji {
+			font-size: 50%;
+			display: inline-block;
+			margin-left: 0.65rem;
+			transform: scale(2) translateY(-0.075rem);
+		}
+	}
+	.sender {
+		float: left;
+		margin-right: 0.5rem;
+		img {
+			width: 25px;
+			height: 25px;
+			border-radius: 25px;
+		}
+	}
+	& + .message-block.sender-1 {
+		margin-top: 0.25rem;
+		.message {
+			border-bottom-left-radius: 100px;
+			border-top-left-radius: 50px;
+		}
+	}
+	&.sender-1 .message {
+		border-bottom-left-radius: 50px;
+	}
+	&.sender-2 {
+		> div {
+			display: flex;
+			justify-content: flex-end;
+		}
+		.sender {
+			float: right;
+		}
+		.message {
+			border-bottom-right-radius: 50px;
+		}
+	}
+}
