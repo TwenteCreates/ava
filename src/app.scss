@@ -28,6 +28,12 @@ p:last-child {
 	opacity: 0;
 }
 
+button {
+	// This isn't good, I know.
+	// But it's for mobile users, who don't focus on buttons
+	outline: none;
+}
+
 // Layout
 
 .app-container {
