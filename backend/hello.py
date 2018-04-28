@@ -49,7 +49,7 @@ def translate():
     return jsonify({'value': resp.text})
 
 #summarize the vaue for paramete
-@app.route('/summary')
+@app.route('/analyze')
 def precire():
 
     assert precire_api_key != ""
