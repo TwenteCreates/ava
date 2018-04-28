@@ -9,7 +9,8 @@
   "scripts": {
     "start:dev": "poi",
     "start:prettier": "onchange '**/*.{js,vue,scss}' -- prettier --write {{changed}}",
-    "build": "poi build"
+    "build": "poi build",
+    "deploy": "poi build && firebase deploy"
   },
   "prettier": {
     "printWidth": 100,

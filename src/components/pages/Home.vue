@@ -92,7 +92,7 @@ export default {
 				},
 				{
 					sender: "meta",
-					text: `John has entered the conversation`
+					text: `Isabella has joined the conversation`
 				}
 			]
 		};
@@ -106,6 +106,11 @@ export default {
 				previous: this.messages[this.messages.length - 1].sender
 			});
 			this.reply = "";
+			setTimeout(() => {
+				this.$el.querySelector("main").scrollTop = this.$el.querySelector(
+					"main"
+				).scrollHeight;
+			}, 1);
 		}
 	}
 };
