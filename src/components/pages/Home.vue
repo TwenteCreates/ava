@@ -2,7 +2,7 @@
 	<section>
 		<!-- <header class="title">Ava</header> -->
 		<main class="main-chat">
-			<div v-for="(message, index) in messages" :key="`message${index}`" v-bind:class="`message-block ${message.sender} next-${message.next || 'none'} previous-${message.previous || 'none'}`">
+			<div v-for="(message, index) in messages" :key="`message${index}`" v-bind:class="`message-block ${message.sender} next-${message.next || 'none'} previous-${message.previous || 'none'} class-${message.class || 'none'}`">
 				<div v-if="message.sender === `meta`" class="message-meta">
 					<div class="details">{{message.text}}</div>
 				</div>
@@ -33,19 +33,26 @@
 			</div>
 		</main>
 		<footer>
-			<div class="options" v-if="options.length > 0">
-				<ul>
-					<li v-for="option in options">
-						<button>{{option}}</button>
-					</li>
-					<li><button>This is a longer option</button></li>
-				</ul>
-			</div>
+			<transition name="fade" mode="out-in">
+				<div class="options" v-if="options.length > 0">
+					<ul>
+						<li v-for="(option, id) in options" :key="`option_${id}`">
+							<button @click="animateButton(option)">{{option}}</button>
+						</li>
+					</ul>
+				</div>
+			</transition>
 			<div class="reply-box">
 				<form @submit.prevent="sendMessage">
 					<input type="text" v-model="reply" placeholder="Enter a message...">
+					<button type="button" v-if="!speaking" @click="startSpeech">
+						<font-awesome-icon icon="microphone" fixed-width />
+					</button>
+					<button type="button" v-else>
+						<font-awesome-icon icon="signal" fixed-width />
+					</button>
 					<button type="submit">
-						<font-awesome-icon icon="arrow-right" />
+						<font-awesome-icon icon="arrow-right" fixed-width />
 					</button>
 				</form>
 			</div>
@@ -55,6 +62,17 @@
 
 <script>
 import FontAwesomeIcon from "@fortawesome/vue-fontawesome";
+function getOffset(el) {
+	var _x = 0;
+	var _y = 0;
+	while (el && !isNaN(el.offsetLeft) && !isNaN(el.offsetTop)) {
+		_x += el.offsetLeft - el.scrollLeft;
+		_y += el.offsetTop - el.scrollTop;
+		el = el.offsetParent;
+	}
+	return { top: _y, left: _x };
+}
+
 export default {
 	mounted() {
 		this.messages = this.$store.state.messages;
@@ -71,13 +89,76 @@ export default {
 			currentImage: "/bot.svg",
 			typing: false,
 			reply: "",
+			speaking: false,
 			messages: [],
 			voice: null,
 			options: []
 		};
 	},
 	methods: {
+		animateButton(text) {
+			if (!this.messages) return;
+			console.log("Your selected", text);
+			let animator = document.createElement("div");
+			animator.innerHTML = text;
+			animator.classList.add("animator");
+			document.body.appendChild(animator);
+			this.messages.push({
+				sender: "sender-2",
+				text: text,
+				class: "temp",
+				avatar: "https://randomuser.me/api/portraits/men/14.jpg",
+				previous:
+					this.messages.length > 0
+						? this.messages[this.messages.length - 1].sender
+						: "unknown"
+			});
+			setTimeout(() => {
+				const elements = document.querySelectorAll(".options li button");
+				document.querySelector(".options ul").style.opacity = "0";
+				document.querySelector(".options ul").addEventListener("transitionend", () => {
+					document.querySelector(".options ul").style.display = "none";
+				});
+				elements.forEach(element => {
+					if (element.innerText === text) {
+						element.style.visibility = "hidden";
+						const bound = getOffset(element);
+						animator.style.width = `${element.offsetWidth + 1}px`;
+						animator.style.top = `${bound.top}px`;
+						animator.style.opacity = "1";
+						animator.style.left = `${bound.left}px`;
+					}
+				});
+			}, 1);
+			setTimeout(() => {
+				const bound = getOffset(document.querySelector(".class-temp .message"));
+				animator.style.transition = `1s`;
+				animator.style.top = `${bound.top - this.$el.querySelector("main").scrollTop}px`;
+				animator.style.left = `${bound.left}px`;
+				animator.addEventListener("transitionend", () => {
+					try {
+						animator.parentNode.removeChild(animator);
+						this.messages.pop();
+						this.sendMessage(text);
+					} catch (e) {}
+					return;
+				});
+			}, 10);
+		},
+		startSpeech() {
+			if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
+				this.speaking = true;
+				const recognition = new webkitSpeechRecognition() || new SpeechRecognition();
+				recognition.start();
+				recognition.addEventListener("result", text => {
+					recognition.stop();
+					this.sendMessage(text.results[0][0].transcript);
+					this.speaking = false;
+				});
+			}
+		},
 		respond(text) {
+			this.options = [];
 			let currentTime = new Date().getTime();
 			return new Promise((resolve, reject) => {
 				setTimeout(() => {
@@ -88,7 +169,7 @@ export default {
 					this.typing = false;
 					resolve({
 						text: result,
-						options: ["Insurance claim", "Help"]
+						options: [`Option ${Math.random()}`, `Option ${Math.random()}`]
 					});
 				}, new Date().getTime() - currentTime > 1000 ? 0 : 1000 - (new Date().getTime() - currentTime));
 			});
@@ -137,11 +218,12 @@ export default {
 			this.messages.push(message);
 			this.$store.commit("update", this.messages);
 		},
-		sendMessage() {
-			if (!this.reply || !this.reply.trim()) return;
-			if (this.reply.toLowerCase() === "clear") {
+		sendMessage(reply = this.reply) {
+			if (typeof reply !== "string") reply = this.reply;
+			this.reply = "";
+			if (!reply || !reply.trim()) return;
+			if (reply.toLowerCase() === "clear") {
 				this.messages = [];
-				this.reply = "";
 				this.$store.commit("update", this.messages);
 				location.reload();
 				return;
@@ -151,14 +233,13 @@ export default {
 			}
 			this.messages.push({
 				sender: "sender-2",
-				text: this.reply,
+				text: reply,
 				avatar: "https://randomuser.me/api/portraits/men/14.jpg",
 				previous:
 					this.messages.length > 0
 						? this.messages[this.messages.length - 1].sender
 						: "unknown"
 			});
-			this.reply = "";
 			this.$store.commit("update", this.messages);
 			setTimeout(() => {
 				this.$el.querySelector("main").scrollTop = this.$el.querySelector(
@@ -330,7 +411,7 @@ footer {
 	button {
 		svg {
 			color: #cb0056;
-			transform: scale(1.5) translateX(-3px);
+			transform: scale(1.5);
 		}
 	}
 	input {
@@ -348,8 +429,9 @@ footer {
 		top: -2rem;
 		background: linear-gradient(transparent, #f3f6f7);
 	}
+	background: #f3f6f7;
 	ul {
-		background: #f3f6f7;
+		transition: 1s;
 		margin: 0;
 		padding: 0;
 		list-style: none;
@@ -367,10 +449,13 @@ footer {
 				background-color: #cb0056;
 				color: #fff;
 				border: none;
-				padding: 0.5rem 1rem;
+				padding: 0.75rem 1rem;
 				border-radius: 25px;
 			}
 		}
 	}
+}
+.class-temp {
+	visibility: hidden;
 }
 </style>

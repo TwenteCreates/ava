@@ -28,6 +28,12 @@ p:last-child {
 	opacity: 0;
 }
 
+button {
+	// This isn't good, I know.
+	// But it's for mobile users, who don't focus on buttons
+	outline: none;
+}
+
 // Layout
 
 .app-container {
@@ -63,4 +69,17 @@ main {
 
 footer {
 	background-color: #fff;
+}
+
+.animator {
+	background-color: #cb0056;
+	color: #fff;
+	border: none;
+	padding: 0.75rem 1rem;
+	border-radius: 25px;
+	position: absolute;
+	z-index: 2000;
+	opacity: 0;
+	left: 0;
+	top: 0;
 }

@@ -5111,6 +5111,10 @@ querystringify@^2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/querystringify/-/querystringify-2.0.0.tgz#fa3ed6e68eb15159457c89b37bc6472833195755"
 
+ramjet@^0.5.0:
+  version "0.5.0"
+  resolved "https://registry.yarnpkg.com/ramjet/-/ramjet-0.5.0.tgz#1a7a972b5c2abbc4e94c52baf778feb4b46dd50f"
+
 randomatic@^1.1.3:
   version "1.1.7"
   resolved "https://registry.yarnpkg.com/randomatic/-/randomatic-1.1.7.tgz#c7abe9cc8b87c0baa876b19fde83fd464797e38c"
@@ -6493,6 +6497,12 @@ vue-loader@^14.1.1:
     vue-hot-reload-api "^2.2.0"
     vue-style-loader "^4.0.1"
     vue-template-es2015-compiler "^1.6.0"
+
+vue-overdrive@^0.0.12:
+  version "0.0.12"
+  resolved "https://registry.yarnpkg.com/vue-overdrive/-/vue-overdrive-0.0.12.tgz#3433dad0c6745154537011be6c37d00e3af08b68"
+  dependencies:
+    ramjet "^0.5.0"
 
 vue-router@^3.0.1:
   version "3.0.1"

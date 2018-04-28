@@ -8,6 +8,14 @@
     ],
     "rewrites": [
       {
+        "source": "/site.webmanifest",
+        "destination": "/site.webmanifest"
+      },
+      {
+        "source": "/browserconfig.xml",
+        "destination": "/browserconfig.xml"
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }
