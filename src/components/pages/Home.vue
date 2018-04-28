@@ -107,7 +107,7 @@ export default {
 				sender: "sender-2",
 				text: text,
 				class: "temp",
-				avatar: "https://randomuser.me/api/portraits/men/14.jpg",
+				avatar: "/sender.png",
 				previous:
 					this.messages.length > 0
 						? this.messages[this.messages.length - 1].sender
@@ -131,7 +131,9 @@ export default {
 				});
 			}, 1);
 			setTimeout(() => {
-				const bound = getOffset(document.querySelector(".class-temp .message"));
+				const element = document.querySelector(".class-temp .message");
+				element.parentNode.querySelector(".class-temp .sender img").style.opacity = "1";
+				const bound = getOffset(element);
 				animator.style.transition = `1s`;
 				animator.style.top = `${bound.top - this.$el.querySelector("main").scrollTop}px`;
 				animator.style.left = `${bound.left}px`;
@@ -234,7 +236,7 @@ export default {
 			this.messages.push({
 				sender: "sender-2",
 				text: reply,
-				avatar: "https://randomuser.me/api/portraits/men/14.jpg",
+				avatar: "/sender.png",
 				previous:
 					this.messages.length > 0
 						? this.messages[this.messages.length - 1].sender
@@ -456,6 +458,15 @@ footer {
 	}
 }
 .class-temp {
-	visibility: hidden;
+	.message {
+		visibility: hidden;
+	}
+	.sender img {
+		opacity: 0;
+		transition: 1s;
+	}
+}
+input {
+	outline: none;
 }
 </style>
