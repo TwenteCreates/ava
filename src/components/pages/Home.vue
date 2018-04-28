@@ -80,6 +80,15 @@ function getOffset(el) {
 
 export default {
 	mounted() {
+		// fetch("https://myapp-thankful-chimpanzee.cfapps.eu10.hana.ondemand.com/force-refresh-chat")
+		// 	.then(() => {
+		// 		fetch(
+		// 			"https://myapp-thankful-chimpanzee.cfapps.eu10.hana.ondemand.com/begin-session "
+		// 		)
+		// 			.then(() => {})
+		// 			.catch(() => {});
+		// 	})
+		// 	.catch(() => {});
 		this.messages = this.$store.state.messages;
 		if (this.messages.length === 0) {
 			this.botSays(`Hi 👋`);
@@ -98,7 +107,8 @@ export default {
 			messages: [],
 			voice: null,
 			options: [],
-			nextMessages: []
+			nextMessages: [],
+			currentQ: null
 		};
 	},
 	methods: {
@@ -142,7 +152,7 @@ export default {
 				).style.opacity =
 					"1";
 				const bound = getOffset(element);
-				animator.style.transition = `1s`;
+				animator.style.transition = `500ms`;
 				animator.style.top = `${bound.top - this.$el.querySelector("main").scrollTop}px`;
 				animator.style.left = `${bound.left}px`;
 				animator.addEventListener("transitionend", () => {
@@ -174,29 +184,77 @@ export default {
 				setTimeout(() => {
 					this.typing = true;
 				}, 200);
-				let result = "insurance_claim";
-				if (replies[result]) {
-					if (replies[result].length > 1) {
-						const texts = replies[result].slice();
-						const untexts = replies[result][0];
-						texts.shift();
-						this.nextMessages = texts;
-						resolve(untexts);
-					} else {
-						resolve(replies[result][0]);
+				if (this.currentQ !== null) {
+					switch (this.currentQ) {
+						case "insurance_claim":
+							this.currentQ;
+							this.nextMessages = [
+								{
+									text: "Could you tell us more about the incident?"
+								}
+							];
+							resolve({
+								text: `${
+									this.messages[this.messages.length - 1].text
+								} insurance, sounds good`
+							});
+							break;
+						default:
+							this.currentQ = null;
+							break;
 					}
 				} else {
-					resolve({
-						text: "I'm sorry, I don't understand"
-					});
+					fetch(
+						`https://myapp-thankful-chimpanzee.cfapps.eu10.hana.ondemand.com/get-answer?text=${encodeURIComponent(
+							text.toLowerCase()
+						)}`
+					)
+						.then(response => response.json())
+						.then(json => {
+							let result = "unknown";
+							const answers = json.answers;
+							console.log(answers, answers.length);
+							for (let i = 0; i < answers.length; i++) {
+								let answer = answers[i];
+								console.log(answer);
+								if (answer.attributes.ANSWER_TEXT) {
+									result = answer.attributes.ANSWER_TEXT;
+									console.log("RESULT", result);
+									if (result === "insurance_claim") {
+										this.currentQ = "insurance_claim";
+									}
+								}
+							}
+							if (replies[result]) {
+								if (replies[result].length > 1) {
+									const texts = replies[result].slice();
+									const untexts = replies[result][0];
+									texts.shift();
+									this.nextMessages = texts;
+									resolve(untexts);
+								} else {
+									resolve(replies[result][0]);
+								}
+							} else {
+								resolve({
+									text: "I'm sorry, I don't understand"
+								});
+							}
+							setTimeout(() => {
+								this.typing = false;
+								resolve({
+									text: result,
+									options: [`Option ${Math.random()}`, `Option ${Math.random()}`]
+								});
+							}, new Date().getTime() - currentTime > 1000 ? 0 : 1000 - (new Date().getTime() - currentTime));
+						})
+						.catch(error => {
+							resolve({
+								text: "I wasn't able to answer your query"
+							});
+							this.typing = false;
+						});
 				}
-				setTimeout(() => {
-					this.typing = false;
-					resolve({
-						text: result,
-						options: [`Option ${Math.random()}`, `Option ${Math.random()}`]
-					});
-				}, new Date().getTime() - currentTime > 1000 ? 0 : 1000 - (new Date().getTime() - currentTime));
 			});
 		},
 		botSays(text, options = []) {
@@ -271,7 +329,7 @@ export default {
 					"main"
 				).scrollHeight;
 			}, 1);
-			this.respond()
+			this.respond(reply)
 				.then(response => {
 					this.botSays(response.text, response.options);
 					setTimeout(() => {
@@ -285,6 +343,7 @@ export default {
 						if (count === l) {
 							this.nextMessages = [];
 							clearInterval(x);
+							this.typing = false;
 							return;
 						}
 						this.botSays(
@@ -481,7 +540,7 @@ footer {
 	}
 	background: #f3f6f7;
 	ul {
-		transition: 1s;
+		transition: 500ms;
 		margin: 0;
 		padding: 0;
 		list-style: none;
@@ -511,7 +570,7 @@ footer {
 	}
 	.sender img {
 		opacity: 0;
-		transition: 1s;
+		transition: 500ms;
 	}
 }
 input {
