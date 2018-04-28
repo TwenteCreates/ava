@@ -8,11 +8,15 @@ License: See LICENSE.txt
 """
 from flask import Flask, jsonify, request
 from googletrans import Translator
+from flask_cors import CORS
+
 
 import os
 import requests
 
 app = Flask(__name__)
+cors = CORS(app)
+
 translator = Translator()
 # Get port from environment variable or choose 9099 as local default
 port = int(os.getenv("PORT", 9099))
@@ -198,8 +202,11 @@ def startNewSessionIbenta():
 
 @app.route('/get-answer')
 def getResponseFromIbenta():
+    text = request.args.get('text', "")
+    assert text != ""
+
     body = {
-	    "message":"Wann ist meine nächste Prämienzahlung?"
+	    "message": text
     }
     headers = {
         'Authorization': 'Bearer %s' %(inbenta_authorization_token),
@@ -215,5 +222,8 @@ def getResponseFromIbenta():
 if __name__ == '__main__':
     # authIbenta()
     # Run the app, listening on all IPs with our chosen port number
+    _refreshTokenIbenta(forced=True)
+    startNewSessionIbenta()
     app.run(host='0.0.0.0', port=port)
+
 
