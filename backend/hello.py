@@ -19,33 +19,36 @@ precire_api_key = str(os.getenv("PRECIRE_API", ""))
 def hello_world():
     return 'Hello World! I am instance ' + str(os.getenv("CF_INSTANCE_INDEX", 0))
 
-
-#summari
+#summarize the vaue for paramete
 @app.route('/summary')
 def precire():
+
     assert precire_api_key != ""
 
+    text = request.args.get('text', "")
+    assert text != ""
+
     import requests
+
     headers = {
         'Ocp-Apim-Subscription-Key': precire_api_key,
         'Content-Type': 'application/json',
         'Content-Language': 'de',
     }
     body = {
-            'document': {
-                'text': request.args.get('text'),
-                'type': 'default',
-    },
-    'results': ['friendly'],
-    'patterns': True,
+        'document': {
+            'text': text,
+            'type': 'default',
+        },
+        'results': ['friendly'],
+        'patterns': True,
     }
     response = requests.post('https://api.precire.ai/v0.9/',
                         json=body,
                         headers=headers)
 
     assert response.status_code == 200
-    data = response.json()
-    return jsonify(data)
+    return jsonify(response.json())
 
 if __name__ == '__main__':
     # Run the app, listening on all IPs with our chosen port number
