@@ -127,6 +127,12 @@ export default {
 		messages.once("value").then(snapshot => {
 			this.data = snapshot.val() || {};
 			this.messages = snapshot.val().conversation || [];
+			this.messages.forEach(message => {
+				if (message.text === "Isabella has joined the conversation") {
+					this.joinConversation = true;
+					this.conversationVisible = true;
+				}
+			});
 		});
 		messages.on("value", snapshot => {
 			if (snapshot.val()) {

@@ -110,9 +110,26 @@ export default {
 			}, 1);
 		});
 		messages.on("value", snapshot => {
-			this.messages = [];
 			if (snapshot.val() && (snapshot.val() || []).length > 0) {
+				if (
+					(
+						this.messages.filter(function(obj) {
+							return !snapshot.val().some(function(obj2) {
+								return obj.value == obj2.value;
+							});
+						}) || []
+					).length > 0
+				) {
+					if (snapshot.val()[snapshot.val().length - 1].botShould) {
+						respond(snapshot.val()[snapshot.val().length - 1].text);
+					}
+				}
 				this.messages = snapshot.val();
+				setTimeout(() => {
+					this.$el.querySelector("main").scrollTop = this.$el.querySelector(
+						"main"
+					).scrollHeight;
+				}, 1);
 			}
 		});
 	},
