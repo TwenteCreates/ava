@@ -236,6 +236,25 @@ export default {
 	},
 	methods: {
 		approve() {
+			const formData = new FormData();
+			formData.append("amount", "324");
+			fetch("https://myapp-thankful-chimpanzee.cfapps.eu10.hana.ondemand.com/optiopay", {
+				body: formData,
+				method: "POST"
+			})
+				.then(response => response.json())
+				.then(json => {
+					this.messages.push({
+						sender: "sender-1",
+						attachment: json,
+						text: "Confirmation for your new payment",
+						avatar: "/bot.svg",
+						previous: "sender-3"
+					});
+					this.saveMessages();
+				})
+				.catch(() => {});
+			console.log("A");
 			this.smartSend("I've approved your request");
 		},
 		decline() {

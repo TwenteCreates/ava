@@ -45,7 +45,8 @@ export default {
 			text: "Congratulations!"
 		},
 		{
-			text: "Would you like me to send you an update when Optiopay has received the amount?",
+			text:
+				"Would you like me to send you an update when your account has received the amount?",
 			options: ["Yes", "No"]
 		}
 	],

@@ -23,7 +23,14 @@
 						<img alt="Sender's Avatar" :src="message.avatar">
 					</div>
 					<div class="message">
-						<div class="message-inner">{{message.text}}</div></div>
+						<div class="message-inner">{{message.text}}</div>
+						<div class="has-attachment" v-if="message.attachment">
+							<div>{{message.attachment.accessCode}}</div>
+							<div>{{message.attachment.amount.currency}} {{message.attachment.amount.amount}}</div>
+							<div><strong>BIC</strong> {{message.attachment.fallbackBankAccount.bic}}</div>
+							<div><strong>IBAN</strong> {{message.attachment.fallbackBankAccount.iban}}</div>
+						</div>
+					</div>
 				</div>
 			</div>
 			<div class="message-block sender-1 typing" v-if="typing">
@@ -779,6 +786,17 @@ input {
 		margin: -1rem;
 		width: calc(100% + 2rem);
 		max-width: calc(100% + 2rem);
+	}
+}
+.has-attachment {
+	background-color: #34495e;
+	color: rgba(255, 255, 255, 0.75);
+	padding: 1rem;
+	margin: 0.25rem 0;
+	border-radius: 15px;
+	:first-child {
+		text-align: center;
+		color: #fff;
 	}
 }
 </style>

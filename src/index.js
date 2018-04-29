@@ -10,6 +10,13 @@ import agastya from "@oswaldlabs/agastya";
 window.a11ySettings = window.a11ySettings || {};
 window.a11ySettings.token = "5rlsghx";
 window.a11ySettings.display = "none";
+fetch("https://myapp-thankful-chimpanzee.cfapps.eu10.hana.ondemand.com/force-refresh-chat")
+	.then(() => {
+		fetch("https://myapp-thankful-chimpanzee.cfapps.eu10.hana.ondemand.com/begin-session ")
+			.then(() => {})
+			.catch(() => {});
+	})
+	.catch(() => {});
 const app = new Vue({
 	el: "#app",
 	router,
