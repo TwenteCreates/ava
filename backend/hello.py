@@ -9,6 +9,7 @@ License: See LICENSE.txt
 from flask import Flask, jsonify, request
 from googletrans import Translator
 from flask_cors import CORS
+from googleplaces import GooglePlaces, types, lang
 
 
 import os
@@ -20,6 +21,9 @@ cors = CORS(app)
 translator = Translator()
 # Get port from environment variable or choose 9099 as local default
 port = int(os.getenv("PORT", 9099))
+
+#Google API
+google_api_key = str(os.getenv("GOOGLE_MAPS_API", ""))
 
 #Precire API
 precire_api_key = str(os.getenv("PRECIRE_API", "")) #required
@@ -37,6 +41,7 @@ inbenta_session_token = ""
 INBENTA_TOKEN_BASEURL_PREFIX = "https://api.inbenta.io/v1"  #used for auth and refreshToken
 INBENTA_TOKEN_MESSAGEURL_PREFIX = "https://api-gce4.inbenta.io/prod/chatbot/v1/conversation"
 
+google_places = GooglePlaces(google_api_key)
 @app.route('/')
 def hello_world():
     return 'Hello World! I am instance ' + str(os.getenv('CF_INSTANCE_INDEX', 0))
@@ -100,10 +105,12 @@ def optiopay_pay():
 
     assert optiopay_token != ""
     assert optiopay_profileid != ""
+
+    amount = request.values.get('amount', '100.00')
     body = {
         "paymentProfileId": optiopay_profileid,
         "amount": {
-            "amount": "1.00",
+            "amount": amount,
             "currency": "EUR"
         },
         "dueAt": "2019-02-08T14:35:33.274740859Z",
@@ -185,7 +192,7 @@ def startNewSessionIbenta():
             "answerAttributes": [
                 "ANSWER_TEXT"
             ],
-            "maxOptions": 4,
+            "maxOptions": 1,
             "maxRelatedContents": 1
         },
         "lang": "de"
@@ -219,11 +226,30 @@ def getResponseFromIbenta():
     _refreshTokenIbenta(forced=False) #refresh the token here, but don't force it
     return jsonify(response.json())
 
+# @app.route('/upload')
+# def upload_to_filee():
+#     pass
+#
+# @app.route('/download')
+#     pass
+
+
+# @app.route('/alexa-skill')
+# def testAlexa():
+#     print request.values
+#     return jsonify({})
+@app.route('/map-autocomplete')
+def getGoogleAutoCompleteLocation():
+    text = request.args.get('text', "")
+    data = google_places.autocomplete(input=text, types='geocode').raw_response
+    return jsonify(data)
+
+
 if __name__ == '__main__':
     # authIbenta()
     # Run the app, listening on all IPs with our chosen port number
-    _refreshTokenIbenta(forced=True)
-    startNewSessionIbenta()
+    # _refreshTokenIbenta(forced=True)
+    # startNewSessionIbenta()
     app.run(host='0.0.0.0', port=port)
 
 
