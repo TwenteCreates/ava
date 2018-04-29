@@ -83,7 +83,7 @@
 				<div class="options" v-if="options.length > 0">
 					<ul>
 						<li v-for="(option, id) in options" :key="`option_${id}`">
-							<button @click="smartSend(option)">{{option}}</button>
+							<button @click="smartSend(option, id)">{{option}}</button>
 						</li>
 					</ul>
 				</div>
@@ -151,7 +151,10 @@ export default {
 			speaking: false,
 			messages: [],
 			voice: null,
-			options: ["Can you tell me your account number?"],
+			options: [
+				"Hi Anand, sorry for keeping you waiting",
+				"Can you tell me your account number?"
+			],
 			nextMessages: [],
 			currentQ: null,
 			conversationVisible: false,
@@ -159,7 +162,7 @@ export default {
 		};
 	},
 	methods: {
-		smartSend(text) {
+		smartSend(text, index) {
 			if (["Can you tell me your account number?"].includes(text)) {
 				this.messages.push({
 					sender: "sender-3",
@@ -171,6 +174,8 @@ export default {
 							? this.messages[this.messages.length - 1].sender
 							: "unknown"
 				});
+				this.options = this.options.splice(index, 1);
+				this.saveMessages();
 			} else {
 				this.sendMessage(text);
 			}

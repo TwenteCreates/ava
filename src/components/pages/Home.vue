@@ -94,15 +94,14 @@ export default {
 		const messages = firebase.database().ref("/conversation");
 		messages.once("value").then(snapshot => {
 			this.messages = snapshot.val() || [];
-			try {
-				if (snapshot.val().length === 0) {
-					this.botSays(`Hi 👋`);
-					this.botSays(`I'm Ava from Talanx`);
-					this.botSays(`How can I help?`, ["Insurance claim", "Help"]);
-				} else {
-					this.options = snapshot.val()[snapshot.val().length - 1].options || [];
-				}
-			} catch (e) {}
+			if ((snapshot.val() || []).length === 0) {
+				this.botSays(`Hi 👋`);
+				this.botSays(`I'm Ava from Talanx`);
+				this.botSays(`How can I help?`, ["Insurance claim", "Help"]);
+			} else {
+				this.options = snapshot.val()[snapshot.val().length - 1].options || [];
+			}
+
 			setTimeout(() => {
 				this.$el.querySelector("main").scrollTop = this.$el.querySelector(
 					"main"
@@ -111,25 +110,24 @@ export default {
 		});
 		messages.on("value", snapshot => {
 			if (snapshot.val() && (snapshot.val() || []).length > 0) {
-				if (
-					(
-						this.messages.filter(function(obj) {
-							return !snapshot.val().some(function(obj2) {
-								return obj.value == obj2.value;
-							});
-						}) || []
-					).length > 0
-				) {
-					if (snapshot.val()[snapshot.val().length - 1].botShould) {
-						respond(snapshot.val()[snapshot.val().length - 1].text);
-					}
+				if (!!snapshot.val()[snapshot.val().length - 1].botShould) {
+					this.respond(snapshot.val()[snapshot.val().length - 1].text)
+						.then(response => {
+							this.respondResponse(response);
+						})
+						.catch(() => {});
 				}
-				this.messages = snapshot.val();
+				this.messages = snapshot.val() || [];
 				setTimeout(() => {
 					this.$el.querySelector("main").scrollTop = this.$el.querySelector(
 						"main"
 					).scrollHeight;
 				}, 1);
+				this.messages.forEach(message => {
+					if (message.text === "Isabella has joined the conversation") {
+						this.bossHasJoined = true;
+					}
+				});
 			}
 		});
 	},
@@ -143,7 +141,8 @@ export default {
 			voice: null,
 			options: [],
 			nextMessages: [],
-			currentQ: null
+			currentQ: null,
+			bossHasJoined: false
 		};
 	},
 	methods: {
@@ -322,7 +321,6 @@ export default {
 							const answer = answers[answers.length - 1];
 							if (answer.attributes.ANSWER_TEXT) {
 								result = answer.attributes.ANSWER_TEXT;
-								console.log("RESULT", result);
 								if (["insurance_claim", "covered_in_insurance"].includes(result)) {
 									this.currentQ = result;
 								}
@@ -440,36 +438,38 @@ export default {
 				}
 				database.ref("data").update(updator);
 			}
-			this.respond(reply)
-				.then(response => {
-					this.botSays(response.text, response.options);
-					setTimeout(() => {
-						this.$el.querySelector("main").scrollTop = this.$el.querySelector(
-							"main"
-						).scrollHeight;
-					}, 1);
-					let l = this.nextMessages.length;
-					let count = 0;
-					let x = setInterval(() => {
-						if (count === l) {
-							this.nextMessages = [];
-							clearInterval(x);
-							this.typing = false;
-							return;
-						}
-						this.botSays(
-							this.nextMessages[count].text,
-							this.nextMessages[count].options
-						);
-						setTimeout(() => {
-							this.$el.querySelector("main").scrollTop = this.$el.querySelector(
-								"main"
-							).scrollHeight;
-						}, 1);
-						count++;
-					}, 1000);
-				})
-				.catch(() => {});
+			if (!this.bossHasJoined) {
+				this.respond(reply)
+					.then(response => {
+						this.respondResponse(response);
+					})
+					.catch(() => {});
+			}
+		},
+		respondResponse(response) {
+			this.botSays(response.text, response.options);
+			setTimeout(() => {
+				this.$el.querySelector("main").scrollTop = this.$el.querySelector(
+					"main"
+				).scrollHeight;
+			}, 1);
+			let l = this.nextMessages.length;
+			let count = 0;
+			let x = setInterval(() => {
+				if (count === l) {
+					this.nextMessages = [];
+					clearInterval(x);
+					this.typing = false;
+					return;
+				}
+				this.botSays(this.nextMessages[count].text, this.nextMessages[count].options);
+				setTimeout(() => {
+					this.$el.querySelector("main").scrollTop = this.$el.querySelector(
+						"main"
+					).scrollHeight;
+				}, 1);
+				count++;
+			}, 1000);
 		}
 	},
 	components: {
