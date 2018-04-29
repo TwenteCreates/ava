@@ -1,6 +1,8 @@
 <template>
 	<section>
-		<!-- <header class="title">Ava</header> -->
+		<header class="title" style="padding: 0.5rem 0">
+			<img alt="HDI" src="/hdilogo.png" style="height: 35px">
+		</header>
 		<main class="main-chat">
 			<div v-for="(message, index) in messages" :key="`message${index}`" v-bind:class="`message-block ${message.sender} next-${message.next || 'none'} previous-${message.previous || 'none'} class-${message.class || 'none'}`">
 				<div v-if="message.sender === `meta`" class="message-meta">
@@ -450,7 +452,7 @@ export default {
 						""
 					)
 				);
-				utterThis.rate = 1.15;
+				utterThis.rate = 1.25;
 				let a = setInterval(() => {
 					voices = window.speechSynthesis.getVoices();
 					voices.forEach(voice => {
