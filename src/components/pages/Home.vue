@@ -94,13 +94,15 @@ export default {
 		const messages = firebase.database().ref("/conversation");
 		messages.once("value").then(snapshot => {
 			this.messages = snapshot.val() || [];
-			if (this.messages.length === 0) {
-				this.botSays(`Hi 👋`);
-				this.botSays(`I'm Ava from Talanx`);
-				this.botSays(`How can I help?`, ["Insurance claim", "Help"]);
-			} else {
-				this.options = this.messages[this.messages.length - 1].options;
-			}
+			try {
+				if (snapshot.val().length === 0) {
+					this.botSays(`Hi 👋`);
+					this.botSays(`I'm Ava from Talanx`);
+					this.botSays(`How can I help?`, ["Insurance claim", "Help"]);
+				} else {
+					this.options = snapshot.val()[snapshot.val().length - 1].options || [];
+				}
+			} catch (e) {}
 			setTimeout(() => {
 				this.$el.querySelector("main").scrollTop = this.$el.querySelector(
 					"main"
@@ -108,20 +110,8 @@ export default {
 			}, 1);
 		});
 		messages.on("value", snapshot => {
+			this.messages = [];
 			if (snapshot.val() && (snapshot.val() || []).length > 0) {
-				if (
-					(
-						this.messages.filter(function(obj) {
-							return !snapshot.val().some(function(obj2) {
-								return obj.value == obj2.value;
-							});
-						}) || []
-					).length > 0
-				) {
-					if (snapshot.val()[snapshot.val().length - 1].botShould) {
-						respond(snapshot.val()[snapshot.val().length - 1].text);
-					}
-				}
 				this.messages = snapshot.val();
 			}
 		});

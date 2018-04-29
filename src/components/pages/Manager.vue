@@ -2,7 +2,7 @@
 	<section>
 		<header>Claim Approval</header>
 		<main class="main-chat">
-			<h3 style="margin-top: 0">Customer information</h3>
+			<h3 style="margin-top: 0">Claim information</h3>
 			<div class="card-row">
 				<div class="card-icon">
 					<font-awesome-icon icon="user" />
@@ -40,42 +40,50 @@
 				</div>
 			</div>
 			<h3>Actions</h3>
-			<div class="actions" style="margin-bottom: 2rem">
-				<button class="action-button" @click="conversationVisible = !conversationVisible">
-					<font-awesome-icon icon="comments" />
-					<span>View Conversation</span>
-				</button>
-				<button class="action-button">
-					<font-awesome-icon icon="comments" />
-					<span>Start Talking</span>
-				</button>
-			</div>
-			<div v-if="conversationVisible" v-for="(message, index) in messages" :key="`message${index}`" v-bind:class="`message-block ${message.sender} next-${message.next || 'none'} previous-${message.previous || 'none'} class-${message.class || 'none'}`">
-				<div v-if="message.sender === `meta`" class="message-meta">
-					<div class="details">{{message.text}}</div>
-				</div>
-				<div v-else-if="message.sender === `sender-3`" class="message-content">
-					<div class="message">
-						<div class="message-inner">{{message.text}}</div></div>
-					<div class="sender">
-						<img alt="Sender's Avatar" :src="message.avatar">
+			<button class="action-button" @click="conversationVisible = !conversationVisible">
+				<font-awesome-icon icon="comments" />
+				<span><span v-if="!conversationVisible">Show</span><span v-else>Hide</span><span> Conversation</span></span>
+			</button>
+			<button class="action-button" @click="startTalking">
+				<font-awesome-icon icon="comment" />
+				<span>Start Talking</span>
+			</button>
+			<div v-if="conversationVisible" style="margin: 2rem 0">
+				<div v-for="(message, index) in messages" :key="`message${index}`" v-bind:class="`message-block ${message.sender} next-${message.next || 'none'} previous-${message.previous || 'none'} class-${message.class || 'none'}`">
+					<div v-if="message.sender === `meta`" class="message-meta">
+						<div class="details">{{message.text}}</div>
+					</div>
+					<div v-else-if="message.sender === `sender-3`" class="message-content">
+						<div class="message">
+							<div class="message-inner">{{message.text}}</div></div>
+						<div class="sender">
+							<img alt="Sender's Avatar" :src="message.avatar">
+						</div>
+					</div>
+					<div v-else class="message-content">
+						<div class="sender">
+							<img alt="Sender's Avatar" :src="message.avatar">
+						</div>
+						<div class="message">
+							<div class="message-inner">{{message.text}}</div></div>
 					</div>
 				</div>
-				<div v-else class="message-content">
-					<div class="sender">
-						<img alt="Sender's Avatar" :src="message.avatar">
-					</div>
-					<div class="message">
-						<div class="message-inner">{{message.text}}</div></div>
-				</div>
 			</div>
+			<button class="action-button">
+				<font-awesome-icon icon="check" />
+				<span>Approve claim</span>
+			</button>
+			<button class="action-button">
+				<font-awesome-icon icon="times" />
+				<span>Decline claim</span>
+			</button>
 		</main>
 		<footer v-if="joinConversation">
 			<transition name="fade" mode="out-in">
 				<div class="options" v-if="options.length > 0">
 					<ul>
 						<li v-for="(option, id) in options" :key="`option_${id}`">
-							<button @click="animateButton(option)">{{option}}</button>
+							<button @click="smartSend(option)">{{option}}</button>
 						</li>
 					</ul>
 				</div>
@@ -129,13 +137,15 @@ export default {
 	},
 	data: () => {
 		return {
-			data: {},
+			data: {
+				data: {}
+			},
 			typing: false,
 			reply: "",
 			speaking: false,
 			messages: [],
 			voice: null,
-			options: [],
+			options: ["Can you tell me your account number?"],
 			nextMessages: [],
 			currentQ: null,
 			conversationVisible: false,
@@ -143,6 +153,32 @@ export default {
 		};
 	},
 	methods: {
+		smartSend(text) {
+			if (["Can you tell me your account number?"].includes(text)) {
+				this.messages.push({
+					sender: "sender-3",
+					text: text,
+					avatar: "/manager.jpg",
+					botShould: true,
+					previous:
+						this.messages.length > 0
+							? this.messages[this.messages.length - 1].sender
+							: "unknown"
+				});
+			} else {
+				this.sendMessage(text);
+			}
+		},
+		startTalking() {
+			this.messages.push({
+				previous: "sender-1",
+				sender: "meta",
+				text: "Isabella has joined the conversation"
+			});
+			this.saveMessages();
+			this.conversationVisible = true;
+			this.joinConversation = true;
+		},
 		saveMessages() {
 			database.ref("/conversation").set(this.messages);
 		},
@@ -174,7 +210,7 @@ export default {
 			this.messages.push({
 				sender: "sender-3",
 				text: reply,
-				avatar: "/manager.png",
+				avatar: "/manager.jpg",
 				previous:
 					this.messages.length > 0
 						? this.messages[this.messages.length - 1].sender
@@ -437,7 +473,7 @@ input {
 		background-color: #3498db;
 	}
 	&:nth-of-type(3) .card-icon {
-		background-color: #2ecc71;
+		background-color: #27ae60;
 	}
 	&:nth-of-type(4) .card-icon {
 		background-color: #f39c12;
@@ -455,6 +491,18 @@ input {
 	}
 	+ .action-button {
 		margin-top: 0.75rem;
+	}
+	&:nth-of-type(1) {
+		background-color: #666;
+	}
+	&:nth-of-type(2) {
+		background-color: #3498db;
+	}
+	&:nth-of-type(3) {
+		background-color: #27ae60;
+	}
+	&:nth-of-type(4) {
+		background-color: #e74c3c;
 	}
 }
 </style>

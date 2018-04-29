@@ -30,5 +30,13 @@ export default {
 			text: "Would you like me to go ahead and file a claim for you?",
 			options: ["Yes, sure! 👍", "No thanks"]
 		}
+	],
+	account_number: [
+		{
+			text: "Anand's account number is 43897212"
+		},
+		{
+			text: "Is there something else you need?"
+		}
 	]
 };
