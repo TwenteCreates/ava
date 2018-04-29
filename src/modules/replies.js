@@ -16,7 +16,8 @@ export default {
 			text: "This is because it's likely a result of your mistake"
 		},
 		{
-			text: "I'm sorry for the bad news. Is there anything else I can help you with?"
+			text: "I'm sorry for the bad news. Is there anything else I can help you with?",
+			options: ["Another insurance claim", "Help"]
 		}
 	],
 	covered_in_insurance: [

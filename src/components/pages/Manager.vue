@@ -35,6 +35,7 @@
 					<font-awesome-icon icon="location-arrow" />
 				</div>
 				<div class="card">
+					<img alt="Map" :src="`https://maps.googleapis.com/maps/api/staticmap?key=AIzaSyCuiZevIb1G87KAoLRSECEdWNBQ06JCMjU&center=${encodeURIComponent(data.data.place_name)}&size=640x350&zoom=13`">
 					<div><strong>Location</strong></div>
 					<div>{{data.data.place_name}}</div>
 				</div>
@@ -153,7 +154,8 @@ export default {
 			voice: null,
 			options: [
 				"Hi Anand, sorry for keeping you waiting",
-				"Can you tell me your account number?"
+				"Can you tell me your account number?",
+				"The insurance amount will be transferred within 7 days via Optiopay"
 			],
 			nextMessages: [],
 			currentQ: null,
@@ -181,12 +183,14 @@ export default {
 			}
 		},
 		startTalking() {
-			this.messages.push({
-				previous: "sender-1",
-				sender: "meta",
-				text: "Isabella has joined the conversation"
-			});
-			this.saveMessages();
+			if (!this.joinConversation) {
+				this.messages.push({
+					previous: "sender-1",
+					sender: "meta",
+					text: "Isabella has joined the conversation"
+				});
+				this.saveMessages();
+			}
 			this.conversationVisible = true;
 			this.joinConversation = true;
 		},
@@ -460,6 +464,13 @@ input {
 	padding: 1rem;
 	border-radius: 15px;
 	flex: 1 0 0;
+	overflow: hidden;
+	img {
+		margin: -1rem;
+		width: calc(100% + 2rem);
+		max-width: calc(100% + 2rem);
+		margin-bottom: 1rem;
+	}
 }
 .card-row {
 	display: flex;
@@ -470,8 +481,8 @@ input {
 		background-color: #aaa;
 		border-radius: 15px;
 		margin-right: 1rem;
-		font-size: 150%;
-		padding: 0 1rem;
+		font-size: 125%;
+		padding: 0 0.75rem;
 		display: flex;
 		flex-direction: column;
 		justify-content: center;
