@@ -96,8 +96,8 @@ function getOffset(el) {
 }
 export default {
 	mounted() {
-		if (sessionStorage.doneAgain) {
-			const messages = firebase.database().ref("/conversation");
+		if (localStorage.sessionID) {
+			const messages = firebase.database().ref(`/${localStorage.sessionID}/conversation`);
 			messages.once("value").then(snapshot => {
 				this.messages = snapshot.val() || [];
 				if ((snapshot.val() || []).length === 0) {
@@ -154,7 +154,9 @@ export default {
 				}
 			});
 		} else {
-			sessionStorage.doneAgain = 1;
+			localStorage.sessionID = Math.random()
+				.toString(36)
+				.slice(2);
 			fetch(
 				"https://myapp-thankful-chimpanzee.cfapps.eu10.hana.ondemand.com/force-refresh-chat"
 			)
@@ -205,7 +207,7 @@ export default {
 			}
 		},
 		saveMessages() {
-			database.ref("/conversation").set(this.messages);
+			database.ref(`/${localStorage.sessionID}/conversation`).set(this.messages);
 		},
 		animateButton(text) {
 			if (!this.messages) return;
@@ -223,7 +225,7 @@ export default {
 					const ref = storageRef.child(url);
 					this.options[0] = "Uploading image...";
 					ref.put(fileUploader.files[0]).then(snapshot => {
-						database.ref("/conversation").update({
+						database.ref(`/${localStorage.sessionID}/conversation`).update({
 							imageUrl: url
 						});
 						this.currentQ = "image_upload";
@@ -481,7 +483,7 @@ export default {
 			if (reply.toLowerCase() === "clear") {
 				this.messages = [];
 				this.saveMessages();
-				database.ref("/data").set({});
+				database.ref(`/${localStorage.sessionID}/data`).set({});
 				location.reload();
 				return;
 			}
@@ -510,7 +512,7 @@ export default {
 				} else {
 					updator[this.currentQ] = reply;
 				}
-				database.ref("data").update(updator);
+				database.ref(`/${localStorage.sessionID}/data`).update(updator);
 			}
 			if (!this.bossHasJoined) {
 				this.respond(reply)
