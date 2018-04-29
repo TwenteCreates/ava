@@ -101,8 +101,12 @@ export default {
 			this.messages = snapshot.val() || [];
 			if ((snapshot.val() || []).length === 0) {
 				this.botSays(`Hi 👋`);
-				this.botSays(`I'm Ava from Talanx`);
-				this.botSays(`How can I help?`, ["Insurance claim", "Introduction"]);
+				setTimeout(() => {
+					this.botSays(`I'm Ava from Talanx`);
+				}, 1000);
+				setTimeout(() => {
+					this.botSays(`How can I help?`, ["Insurance claim", "Introduction"]);
+				}, 2000);
 			} else {
 				this.options = snapshot.val()[snapshot.val().length - 1].options || [];
 			}
