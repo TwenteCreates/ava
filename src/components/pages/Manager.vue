@@ -32,6 +32,15 @@
 			</div>
 			<div class="card-row">
 				<div class="card-icon">
+					<font-awesome-icon icon="smile" />
+				</div>
+				<div class="card">
+					<div><strong>Sentiment</strong></div>
+					<div>{{sentiment}}</div>
+				</div>
+			</div>
+			<div class="card-row">
+				<div class="card-icon">
 					<font-awesome-icon icon="location-arrow" />
 				</div>
 				<div class="card">
@@ -128,12 +137,24 @@ export default {
 		messages.once("value").then(snapshot => {
 			this.data = snapshot.val() || {};
 			this.messages = snapshot.val().conversation || [];
+			let sentimentMessage = "";
 			this.messages.forEach(message => {
 				if (message.text === "Isabella has joined the conversation") {
 					this.joinConversation = true;
 					this.conversationVisible = true;
 				}
+				sentimentMessage += message.text + ". ";
 			});
+			fetch(
+				`https://myapp-thankful-chimpanzee.cfapps.eu10.hana.ondemand.com/analyze?text=${encodeURIComponent(
+					sentimentMessage
+				)}`
+			)
+				.then(response => response.json())
+				.then(json => {
+					this.sentiment = parseInt(json.results.friendly.score * 100) + "%  friendly";
+				})
+				.catch(() => {});
 		});
 		messages.on("value", snapshot => {
 			if (snapshot.val()) {
@@ -152,6 +173,7 @@ export default {
 			speaking: false,
 			messages: [],
 			voice: null,
+			sentiment: "Loading...",
 			options: [
 				"Hi Anand, sorry for keeping you waiting",
 				"Can you tell me your account number?",
