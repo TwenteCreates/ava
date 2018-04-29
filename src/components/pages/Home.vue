@@ -96,62 +96,80 @@ function getOffset(el) {
 }
 export default {
 	mounted() {
-		const messages = firebase.database().ref("/conversation");
-		messages.once("value").then(snapshot => {
-			this.messages = snapshot.val() || [];
-			if ((snapshot.val() || []).length === 0) {
-				this.botSays(`Hi 👋`);
-				setTimeout(() => {
-					this.botSays(`I'm Ava from Talanx`);
-				}, 1000);
-				setTimeout(() => {
-					this.botSays(`How can I help?`, ["Insurance claim", "Introduction"]);
-				}, 2000);
-			} else {
-				this.options = snapshot.val()[snapshot.val().length - 1].options || [];
-			}
-			setTimeout(() => {
-				this.$el.querySelector("main").scrollTop = this.$el.querySelector(
-					"main"
-				).scrollHeight;
-			}, 1);
-		});
-		messages.on("value", snapshot => {
-			if (snapshot.val() && (snapshot.val() || []).length > 0) {
-				if (!!snapshot.val()[snapshot.val().length - 1].botShould) {
-					console.log("botShould");
-					this.respond(snapshot.val()[snapshot.val().length - 1].text)
-						.then(response => {
-							this.respondResponse(response);
-						})
-						.catch(() => {});
-				}
+		if (sessionStorage.doneAgain) {
+			const messages = firebase.database().ref("/conversation");
+			messages.once("value").then(snapshot => {
 				this.messages = snapshot.val() || [];
+				if ((snapshot.val() || []).length === 0) {
+					this.botSays(`Hi 👋`);
+					setTimeout(() => {
+						this.botSays(`I'm Ava from Talanx`);
+					}, 200);
+					setTimeout(() => {
+						this.botSays(`How can I help?`, ["Insurance claim", "Introduction"]);
+					}, 400);
+				} else {
+					this.options = snapshot.val()[snapshot.val().length - 1].options || [];
+				}
 				setTimeout(() => {
 					this.$el.querySelector("main").scrollTop = this.$el.querySelector(
 						"main"
 					).scrollHeight;
 				}, 1);
-				this.messages.forEach(message => {
-					if (message.text === "Isabella has joined the conversation") {
-						this.bossHasJoined = true;
+			});
+			messages.on("value", snapshot => {
+				if (snapshot.val() && (snapshot.val() || []).length > 0) {
+					if (!!snapshot.val()[snapshot.val().length - 1].botShould) {
+						console.log("botShould");
+						this.respond(snapshot.val()[snapshot.val().length - 1].text)
+							.then(response => {
+								this.respondResponse(response);
+							})
+							.catch(() => {});
 					}
-					if (message.text.includes("IMAGE_URL|")) {
-						if (!this.imageUrl) {
-							const file = firebase
-								.storage()
-								.ref(message.text.replace("IMAGE_URL|", ""));
-							file
-								.getDownloadURL()
-								.then(url => {
-									this.imageUrl = url;
-								})
-								.catch(() => {});
+					this.messages = snapshot.val() || [];
+					setTimeout(() => {
+						this.$el.querySelector("main").scrollTop = this.$el.querySelector(
+							"main"
+						).scrollHeight;
+					}, 1);
+					this.messages.forEach(message => {
+						if (message.text === "Isabella has joined the conversation") {
+							this.bossHasJoined = true;
 						}
-					}
-				});
-			}
-		});
+						if (message.text.includes("IMAGE_URL|")) {
+							if (!this.imageUrl) {
+								const file = firebase
+									.storage()
+									.ref(message.text.replace("IMAGE_URL|", ""));
+								file
+									.getDownloadURL()
+									.then(url => {
+										this.imageUrl = url;
+									})
+									.catch(() => {});
+							}
+						}
+					});
+				}
+			});
+		} else {
+			sessionStorage.doneAgain = 1;
+			fetch(
+				"https://myapp-thankful-chimpanzee.cfapps.eu10.hana.ondemand.com/force-refresh-chat"
+			)
+				.then(() => {
+					fetch(
+						"https://myapp-thankful-chimpanzee.cfapps.eu10.hana.ondemand.com/begin-session "
+					)
+						.then(() => {})
+						.catch(() => {})
+						.finally(() => {
+							this.sendMessage("clear");
+						});
+				})
+				.catch(() => {});
+		}
 	},
 	data: () => {
 		return {
@@ -255,7 +273,7 @@ export default {
 				).style.opacity =
 					"1";
 				const bound = getOffset(element);
-				animator.style.transition = `500ms`;
+				animator.style.transition = `300ms`;
 				animator.style.top = `${bound.top - this.$el.querySelector("main").scrollTop}px`;
 				animator.style.left = `${bound.left}px`;
 				animator.addEventListener("transitionend", () => {
@@ -286,65 +304,63 @@ export default {
 			return new Promise((resolve, reject) => {
 				this.typing = true;
 				if (this.currentQ !== null) {
-					setTimeout(() => {
-						switch (this.currentQ) {
-							case "image_upload":
-								resolve({
-									text: "Thanks, that's all I need 👌"
-								});
-								this.nextMessages = [
-									{
-										text: "I'm inviting my colleague to approve your request"
-									}
-								];
-								this.currentQ = null;
-								break;
-							case "place_name":
-								resolve({
-									text: "Click a photo to verify your claim",
-									options: ["Click photo"]
-								});
-								this.currentQ = "image_upload";
-								break;
-							case "when_happened":
-								resolve({
-									text: "Okay, any idea where it happened?"
-								});
-								this.currentQ = "place_name";
-								break;
-							case "covered_in_insurance":
-								if (text.toLowerCase().includes("yes")) {
-									resolve({
-										text: "When did this incident happen?",
-										options: ["Today", "Yesterday", "April 28"]
-									});
-									this.currentQ = "when_happened";
-								} else {
-									resolve({
-										text:
-											"Okay, let me know if there's anything else I can do for you 😊"
-									});
-									this.currentQ = null;
+					switch (this.currentQ) {
+						case "image_upload":
+							resolve({
+								text: "Thanks, that's all I need 👌"
+							});
+							this.nextMessages = [
+								{
+									text: "I'm inviting my colleague to approve your request"
 								}
-								break;
-							case "insurance_claim":
-								this.nextMessages = [
-									{
-										text: "Could you tell me more about the incident?"
-									}
-								];
+							];
+							this.currentQ = null;
+							break;
+						case "place_name":
+							resolve({
+								text: "Click a photo to verify your claim",
+								options: ["Click photo"]
+							});
+							this.currentQ = "image_upload";
+							break;
+						case "when_happened":
+							resolve({
+								text: "Okay, any idea where it happened?"
+							});
+							this.currentQ = "place_name";
+							break;
+						case "covered_in_insurance":
+							if (text.toLowerCase().includes("yes")) {
 								resolve({
-									text: `${
-										this.messages[this.messages.length - 1].text
-									} insurance, sounds good`
+									text: "When did this incident happen?",
+									options: ["Today", "Yesterday", "April 28"]
+								});
+								this.currentQ = "when_happened";
+							} else {
+								resolve({
+									text:
+										"Okay, let me know if there's anything else I can do for you 😊"
 								});
 								this.currentQ = null;
-								break;
-							default:
-								this.currentQ = null;
-								break;
-						}
-					}, new Date().getTime() - currentTime > 1000 ? 0 : 1000 - (new Date().getTime() - currentTime));
+							}
+							break;
+						case "insurance_claim":
+							this.nextMessages = [
+								{
+									text: "Could you tell me more about the incident?"
+								}
+							];
+							resolve({
+								text: `${
+									this.messages[this.messages.length - 1].text
+								} insurance, sounds good`
+							});
+							this.currentQ = null;
+							break;
+						default:
+							this.currentQ = null;
+							break;
+					}
 				} else {
 					fetch(
 						`https://myapp-thankful-chimpanzee.cfapps.eu10.hana.ondemand.com/get-answer?text=${encodeURIComponent(
@@ -527,7 +543,7 @@ export default {
 					).scrollHeight;
 				}, 1);
 				count++;
-			}, 2000);
+			}, 1);
 		}
 	},
 	components: {
@@ -573,7 +589,7 @@ main {
 	}
 	&.sender-2 {
 		.message-inner {
-			background-color: #cb0056;
+			background-color: #16a085;
 			color: #fff;
 		}
 	}
@@ -698,7 +714,7 @@ footer {
 	}
 	button {
 		svg {
-			color: #cb0056;
+			color: #16a085;
 			transform: scale(1.5);
 		}
 	}
@@ -734,7 +750,7 @@ footer {
 				padding-right: 1rem;
 			}
 			button {
-				background-color: #cb0056;
+				background-color: #16a085;
 				color: #fff;
 				border: none;
 				padding: 0.75rem 1rem;

@@ -44,7 +44,7 @@
 					<font-awesome-icon icon="location-arrow" />
 				</div>
 				<div class="card">
-					<img alt="Map" :src="`https://maps.googleapis.com/maps/api/staticmap?key=AIzaSyCuiZevIb1G87KAoLRSECEdWNBQ06JCMjU&center=${encodeURIComponent((data.data || {}).place_name || 'Unknown')}&size=640x350&zoom=13`">
+					<img alt="Map" v-if="(data.data || {}).place_name" :src="`https://maps.googleapis.com/maps/api/staticmap?key=AIzaSyCuiZevIb1G87KAoLRSECEdWNBQ06JCMjU&center=${encodeURIComponent((data.data || {}).place_name || 'Unknown')}&size=640x350&zoom=13`">
 					<div><strong>Location</strong></div>
 					<div>{{(data.data || {}).place_name || "Unknown"}}</div>
 				</div>
@@ -240,9 +240,9 @@ export default {
 							? this.messages[this.messages.length - 1].sender
 							: "unknown"
 				});
-				if (index) {
-					this.options = this.options.splice(index, 1);
-				}
+				// if (index) {
+				// 	this.options = this.options.splice(index, 1);
+				// }
 				this.saveMessages();
 			} else {
 				this.sendMessage(text);
@@ -555,7 +555,7 @@ input {
 		color: #fff;
 	}
 	&:nth-of-type(1) .card-icon {
-		background-color: #cb0056;
+		background-color: #16a085;
 	}
 	&:nth-of-type(2) .card-icon {
 		background-color: #3498db;

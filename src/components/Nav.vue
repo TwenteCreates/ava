@@ -57,7 +57,7 @@ export default {
 					font-size: 150%;
 				}
 				&.router-link-exact-active {
-					color: #cb0056;
+					color: #16a085;
 					opacity: 1;
 				}
 			}
