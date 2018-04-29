@@ -39,5 +39,40 @@ export default {
 		{
 			text: "Is there something else you need?"
 		}
+	],
+	approve_request: [
+		{
+			text: "Congratulations!"
+		},
+		{
+			text: "Would you like me to send you an update when Optiopay has received the amount?",
+			options: ["Yes", "No"]
+		}
+	],
+	decline_request: [
+		{
+			text: "No worries"
+		},
+		{
+			text:
+				"Would you like me to schedule a follow-up call? It's useful if you need more information",
+			options: ["Yes", "No"]
+		}
+	],
+	introduction: [
+		{
+			text: "I'm a communication assistant."
+		},
+		{
+			text: "I save time for businesses by interacting with customers on their behalf"
+		},
+		{
+			text:
+				"And I save time for you by making the process of insurance claims simple and transparent"
+		},
+		{
+			text: "What would you like to do next?",
+			options: ["Insurance claim"]
+		}
 	]
 };

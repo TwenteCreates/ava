@@ -102,7 +102,7 @@ export default {
 			if ((snapshot.val() || []).length === 0) {
 				this.botSays(`Hi 👋`);
 				this.botSays(`I'm Ava from Talanx`);
-				this.botSays(`How can I help?`, ["Insurance claim", "Help"]);
+				this.botSays(`How can I help?`, ["Insurance claim", "Introduction"]);
 			} else {
 				this.options = snapshot.val()[snapshot.val().length - 1].options || [];
 			}
@@ -115,6 +115,7 @@ export default {
 		messages.on("value", snapshot => {
 			if (snapshot.val() && (snapshot.val() || []).length > 0) {
 				if (!!snapshot.val()[snapshot.val().length - 1].botShould) {
+					console.log("botShould");
 					this.respond(snapshot.val()[snapshot.val().length - 1].text)
 						.then(response => {
 							this.respondResponse(response);
@@ -198,6 +199,7 @@ export default {
 						.toString(36)
 						.slice(2)}.jpg`;
 					const ref = storageRef.child(url);
+					this.options[0] = "Uploading image...";
 					ref.put(fileUploader.files[0]).then(snapshot => {
 						database.ref("/conversation").update({
 							imageUrl: url
@@ -359,17 +361,7 @@ export default {
 											.then(() => {})
 											.catch(() => {})
 											.finally(() => {
-												fetch(
-													`https://myapp-thankful-chimpanzee.cfapps.eu10.hana.ondemand.com/get-answer?text=${encodeURIComponent(
-														text.toLowerCase()
-													)}`
-												)
-													.then(response => {
-														if (response.ok) {
-															return response.json();
-														}
-													})
-													.catch(() => {});
+												this.sendMessage("clear");
 											});
 									})
 									.catch(() => {});
@@ -468,6 +460,7 @@ export default {
 			if (reply.toLowerCase() === "clear") {
 				this.messages = [];
 				this.saveMessages();
+				database.ref("/data").set({});
 				location.reload();
 				return;
 			}
@@ -519,7 +512,6 @@ export default {
 				if (count === l) {
 					this.nextMessages = [];
 					clearInterval(x);
-					this.typing = false;
 					return;
 				}
 				this.botSays(this.nextMessages[count].text, this.nextMessages[count].options);
@@ -529,7 +521,7 @@ export default {
 					).scrollHeight;
 				}, 1);
 				count++;
-			}, 1000);
+			}, 2000);
 		}
 	},
 	components: {

@@ -18,7 +18,7 @@
 				</div>
 				<div class="card">
 					<div><strong>Insurance type</strong></div>
-					<div>{{data.data.insurance_claim}} insurance</div>
+					<div>{{(data.data || {}).insurance_claim || "Unknown"}} insurance</div>
 				</div>
 			</div>
 			<div class="card-row">
@@ -27,7 +27,7 @@
 				</div>
 				<div class="card">
 					<div><strong>Date &amp; time</strong></div>
-					<div>{{data.data.when_happened}}</div>
+					<div>{{(data.data || {}).when_happened || "Unknown"}}</div>
 				</div>
 			</div>
 			<div class="card-row">
@@ -44,9 +44,9 @@
 					<font-awesome-icon icon="location-arrow" />
 				</div>
 				<div class="card">
-					<img alt="Map" :src="`https://maps.googleapis.com/maps/api/staticmap?key=AIzaSyCuiZevIb1G87KAoLRSECEdWNBQ06JCMjU&center=${encodeURIComponent(data.data.place_name)}&size=640x350&zoom=13`">
+					<img alt="Map" :src="`https://maps.googleapis.com/maps/api/staticmap?key=AIzaSyCuiZevIb1G87KAoLRSECEdWNBQ06JCMjU&center=${encodeURIComponent((data.data || {}).place_name || 'Unknown')}&size=640x350&zoom=13`">
 					<div><strong>Location</strong></div>
-					<div>{{data.data.place_name}}</div>
+					<div>{{(data.data || {}).place_name || "Unknown"}}</div>
 				</div>
 			</div>
 			<h3>Actions</h3>
@@ -85,11 +85,11 @@
 				</div>
 			</div>
 			<div class="yes-no" style="margin-top: 1rem">
-				<button class="action-button">
+				<button class="action-button" @click="decline">
 					<font-awesome-icon icon="times" />
 					<span>Decline</span>
 				</button>
-				<button class="action-button">
+				<button class="action-button" @click="approve">
 					<font-awesome-icon icon="check" />
 					<span>Approve</span>
 				</button>
@@ -144,45 +144,18 @@ export default {
 		messages.once("value").then(snapshot => {
 			this.data = snapshot.val() || {};
 			this.messages = snapshot.val().conversation || [];
-			let sentimentMessage = "";
 			this.messages.forEach(message => {
 				if (message.text === "Isabella has joined the conversation") {
 					this.joinConversation = true;
 					this.conversationVisible = true;
 				}
-				sentimentMessage += message.text + ". ";
-				if (message.text.includes("IMAGE_URL|")) {
-					if (!this.imageUrl) {
-						const file = firebase.storage().ref(message.text.replace("IMAGE_URL|", ""));
-						file
-							.getDownloadURL()
-							.then(url => {
-								this.imageUrl = url;
-							})
-							.catch(() => {});
-					}
-				}
 			});
-			if (sentimentMessage) {
-				fetch(
-					`https://myapp-thankful-chimpanzee.cfapps.eu10.hana.ondemand.com/analyze?text=${encodeURIComponent(
-						sentimentMessage
-					)}`
-				)
-					.then(response => response.json())
-					.then(json => {
-						this.sentiment =
-							parseInt(json.results.friendly.score * 100) + "%  friendly";
-					})
-					.catch(() => {});
-			} else {
-				this.sentiment = "Unknown";
-			}
 		});
 		messages.on("value", snapshot => {
 			if (snapshot.val()) {
 				this.data = snapshot.val();
-				this.messages = snapshot.val().conversation || [];
+				this.messages = (snapshot.val() || {}).conversation || [];
+				let sentimentMessage = "";
 				this.messages.forEach(message => {
 					if (message.text.includes("IMAGE_URL|")) {
 						if (!this.imageUrl) {
@@ -197,7 +170,25 @@ export default {
 								.catch(() => {});
 						}
 					}
+					if (message.sender === "sender-2") {
+						sentimentMessage += message.text + ". ";
+					}
 				});
+				if (sentimentMessage) {
+					fetch(
+						`https://myapp-thankful-chimpanzee.cfapps.eu10.hana.ondemand.com/analyze?text=${encodeURIComponent(
+							sentimentMessage
+						)}`
+					)
+						.then(response => response.json())
+						.then(json => {
+							this.sentiment =
+								parseInt(json.results.friendly.score * 100) + "%  friendly";
+						})
+						.catch(() => {});
+				} else {
+					this.sentiment = "Unknown";
+				}
 			}
 		});
 	},
@@ -225,8 +216,20 @@ export default {
 		};
 	},
 	methods: {
+		approve() {
+			this.smartSend("I've approved your request");
+		},
+		decline() {
+			this.smartSend("I'm sorry, but I've declined your request");
+		},
 		smartSend(text, index) {
-			if (["Can you tell me your account number?"].includes(text)) {
+			if (
+				[
+					"Can you tell me your account number?",
+					"I've approved your request",
+					"I'm sorry, but I've declined your request"
+				].includes(text)
+			) {
 				this.messages.push({
 					sender: "sender-3",
 					text: text,
@@ -237,7 +240,9 @@ export default {
 							? this.messages[this.messages.length - 1].sender
 							: "unknown"
 				});
-				this.options = this.options.splice(index, 1);
+				if (index) {
+					this.options = this.options.splice(index, 1);
+				}
 				this.saveMessages();
 			} else {
 				this.sendMessage(text);
