@@ -315,7 +315,7 @@ export default {
 							case "covered_in_insurance":
 								if (text.toLowerCase().includes("yes")) {
 									resolve({
-										text: "When this this incident happen?",
+										text: "When did this incident happen?",
 										options: ["Today", "Yesterday", "April 28"]
 									});
 									this.currentQ = "when_happened";
@@ -330,7 +330,7 @@ export default {
 							case "insurance_claim":
 								this.nextMessages = [
 									{
-										text: "Could you tell us more about the incident?"
+										text: "Could you tell me more about the incident?"
 									}
 								];
 								resolve({
@@ -425,6 +425,7 @@ export default {
 						""
 					)
 				);
+				utterThis.rate = 1.15;
 				let a = setInterval(() => {
 					voices = window.speechSynthesis.getVoices();
 					voices.forEach(voice => {
@@ -513,6 +514,7 @@ export default {
 			let l = this.nextMessages.length;
 			let count = 0;
 			let x = setInterval(() => {
+				this.typing = false;
 				if (count === l) {
 					this.nextMessages = [];
 					clearInterval(x);

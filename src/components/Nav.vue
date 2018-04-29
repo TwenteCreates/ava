@@ -14,10 +14,10 @@
 				</router-link>
 			</li>
 			<li>
-				<router-link to="/profile">
+				<a onclick="window.agastya.open()">
 					<div><font-awesome-icon icon="cog" /></div>
 					<div>Settings</div>
-				</router-link>
+				</a>
 			</li>
 		</ul>
 	</nav>
