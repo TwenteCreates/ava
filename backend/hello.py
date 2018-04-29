@@ -109,7 +109,7 @@ def precire():
     response = requests.post('https://api.precire.ai/v0.9/',
                         json=body,
                         headers=headers)
-
+    print response.json()
     assert response.status_code == 200
     return jsonify(response.json())
 #
