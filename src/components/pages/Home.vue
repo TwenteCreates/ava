@@ -8,7 +8,12 @@
 				</div>
 				<div v-else-if="message.sender === `sender-2`" class="message-content">
 					<div class="message">
-						<div class="message-inner">{{message.text}}</div></div>
+						<div class="message-inner" v-if="!message.text.includes(`IMAGE_URL|`)">{{message.text}}</div>
+						<div class="message-inner inline-image" v-else>
+							<div v-if="imageUrl"><img alt="Uploaded image" :src="imageUrl"></div>
+							<div v-else><font-awesome-icon icon="sync" spin /> &nbsp;Loading...</div>
+						</div>
+					</div>
 					<div class="sender">
 						<img alt="Sender's Avatar" :src="message.avatar">
 					</div>
@@ -101,7 +106,6 @@ export default {
 			} else {
 				this.options = snapshot.val()[snapshot.val().length - 1].options || [];
 			}
-
 			setTimeout(() => {
 				this.$el.querySelector("main").scrollTop = this.$el.querySelector(
 					"main"
@@ -127,6 +131,19 @@ export default {
 					if (message.text === "Isabella has joined the conversation") {
 						this.bossHasJoined = true;
 					}
+					if (message.text.includes("IMAGE_URL|")) {
+						if (!this.imageUrl) {
+							const file = firebase
+								.storage()
+								.ref(message.text.replace("IMAGE_URL|", ""));
+							file
+								.getDownloadURL()
+								.then(url => {
+									this.imageUrl = url;
+								})
+								.catch(() => {});
+						}
+					}
 				});
 			}
 		});
@@ -135,6 +152,7 @@ export default {
 		return {
 			currentImage: "/bot.svg",
 			typing: false,
+			imageUrl: "",
 			reply: "",
 			speaking: false,
 			messages: [],
@@ -168,6 +186,31 @@ export default {
 		},
 		animateButton(text) {
 			if (!this.messages) return;
+			if (text === "Click photo") {
+				const fileUploader = document.createElement("input");
+				fileUploader.setAttribute("type", "file");
+				fileUploader.style.display = "none";
+				document.body.appendChild(fileUploader);
+				fileUploader.click();
+				fileUploader.addEventListener("change", () => {
+					const storageRef = firebase.storage().ref();
+					const url = `upload/${Math.random()
+						.toString(36)
+						.slice(2)}.jpg`;
+					const ref = storageRef.child(url);
+					ref.put(fileUploader.files[0]).then(snapshot => {
+						database.ref("/conversation").update({
+							imageUrl: url
+						});
+						this.currentQ = "image_upload";
+						setTimeout(() => {
+							fileUploader.parentNode.removeChild(fileUploader);
+							this.sendMessage(`IMAGE_URL|${url}`);
+						}, 10);
+					});
+				});
+				return;
+			}
 			let animator = document.createElement("div");
 			animator.innerHTML = text;
 			animator.classList.add("animator");
@@ -239,7 +282,7 @@ export default {
 				if (this.currentQ !== null) {
 					setTimeout(() => {
 						switch (this.currentQ) {
-							case "place_name":
+							case "image_upload":
 								resolve({
 									text: "Thanks, that's all I need 👌"
 								});
@@ -249,6 +292,13 @@ export default {
 									}
 								];
 								this.currentQ = null;
+								break;
+							case "place_name":
+								resolve({
+									text: "Click a photo to verify your claim",
+									options: ["Click photo"]
+								});
+								this.currentQ = "image_upload";
 								break;
 							case "when_happened":
 								resolve({
@@ -309,7 +359,17 @@ export default {
 											.then(() => {})
 											.catch(() => {})
 											.finally(() => {
-												this.sendMessage("clear");
+												fetch(
+													`https://myapp-thankful-chimpanzee.cfapps.eu10.hana.ondemand.com/get-answer?text=${encodeURIComponent(
+														text.toLowerCase()
+													)}`
+												)
+													.then(response => {
+														if (response.ok) {
+															return response.json();
+														}
+													})
+													.catch(() => {});
 											});
 									})
 									.catch(() => {});
@@ -696,5 +756,13 @@ footer {
 }
 input {
 	outline: none;
+}
+.inline-image {
+	overflow: hidden;
+	img {
+		margin: -1rem;
+		width: calc(100% + 2rem);
+		max-width: calc(100% + 2rem);
+	}
 }
 </style>

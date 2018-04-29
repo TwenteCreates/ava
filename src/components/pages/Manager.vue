@@ -54,7 +54,7 @@
 				<font-awesome-icon icon="comments" />
 				<span><span v-if="!conversationVisible">Show</span><span v-else>Hide</span><span> Conversation</span></span>
 			</button>
-			<button class="action-button" @click="startTalking">
+			<button class="action-button" @click="startTalking" v-if="!joinConversation">
 				<font-awesome-icon icon="comment" />
 				<span>Start Talking</span>
 			</button>
@@ -75,18 +75,25 @@
 							<img alt="Sender's Avatar" :src="message.avatar">
 						</div>
 						<div class="message">
-							<div class="message-inner">{{message.text}}</div></div>
+							<div class="message-inner" v-if="!message.text.includes(`IMAGE_URL|`)">{{message.text}}</div>
+							<div class="message-inner inline-image" v-else>
+								<div v-if="imageUrl"><img alt="Uploaded image" :src="imageUrl"></div>
+								<div v-else><font-awesome-icon icon="sync" spin /> &nbsp;Loading...</div>
+							</div>
+						</div>
 					</div>
 				</div>
 			</div>
-			<button class="action-button">
-				<font-awesome-icon icon="check" />
-				<span>Approve claim</span>
-			</button>
-			<button class="action-button">
-				<font-awesome-icon icon="times" />
-				<span>Decline claim</span>
-			</button>
+			<div class="yes-no" style="margin-top: 1rem">
+				<button class="action-button">
+					<font-awesome-icon icon="times" />
+					<span>Decline</span>
+				</button>
+				<button class="action-button">
+					<font-awesome-icon icon="check" />
+					<span>Approve</span>
+				</button>
+			</div>
 		</main>
 		<footer v-if="joinConversation">
 			<transition name="fade" mode="out-in">
@@ -144,22 +151,53 @@ export default {
 					this.conversationVisible = true;
 				}
 				sentimentMessage += message.text + ". ";
+				if (message.text.includes("IMAGE_URL|")) {
+					if (!this.imageUrl) {
+						const file = firebase.storage().ref(message.text.replace("IMAGE_URL|", ""));
+						file
+							.getDownloadURL()
+							.then(url => {
+								this.imageUrl = url;
+							})
+							.catch(() => {});
+					}
+				}
 			});
-			fetch(
-				`https://myapp-thankful-chimpanzee.cfapps.eu10.hana.ondemand.com/analyze?text=${encodeURIComponent(
-					sentimentMessage
-				)}`
-			)
-				.then(response => response.json())
-				.then(json => {
-					this.sentiment = parseInt(json.results.friendly.score * 100) + "%  friendly";
-				})
-				.catch(() => {});
+			if (sentimentMessage) {
+				fetch(
+					`https://myapp-thankful-chimpanzee.cfapps.eu10.hana.ondemand.com/analyze?text=${encodeURIComponent(
+						sentimentMessage
+					)}`
+				)
+					.then(response => response.json())
+					.then(json => {
+						this.sentiment =
+							parseInt(json.results.friendly.score * 100) + "%  friendly";
+					})
+					.catch(() => {});
+			} else {
+				this.sentiment = "Unknown";
+			}
 		});
 		messages.on("value", snapshot => {
 			if (snapshot.val()) {
 				this.data = snapshot.val();
 				this.messages = snapshot.val().conversation || [];
+				this.messages.forEach(message => {
+					if (message.text.includes("IMAGE_URL|")) {
+						if (!this.imageUrl) {
+							const file = firebase
+								.storage()
+								.ref(message.text.replace("IMAGE_URL|", ""));
+							file
+								.getDownloadURL()
+								.then(url => {
+									this.imageUrl = url;
+								})
+								.catch(() => {});
+						}
+					}
+				});
 			}
 		});
 	},
@@ -172,6 +210,7 @@ export default {
 			reply: "",
 			speaking: false,
 			messages: [],
+			imageUrl: "",
 			voice: null,
 			sentiment: "Loading...",
 			options: [
@@ -542,11 +581,27 @@ input {
 	&:nth-of-type(2) {
 		background-color: #3498db;
 	}
-	&:nth-of-type(3) {
-		background-color: #27ae60;
+}
+.yes-no {
+	display: flex;
+	justify-content: space-between;
+	button {
+		width: 48%;
 	}
-	&:nth-of-type(4) {
+	button:nth-child(2) {
+		background-color: #27ae60;
+		margin-top: 0;
+	}
+	button:nth-child(1) {
 		background-color: #e74c3c;
+	}
+}
+.inline-image {
+	overflow: hidden;
+	img {
+		margin: -1rem;
+		width: calc(100% + 2rem);
+		max-width: calc(100% + 2rem);
 	}
 }
 </style>
