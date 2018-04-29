@@ -6,19 +6,19 @@
 				<div v-if="message.sender === `meta`" class="message-meta">
 					<div class="details">{{message.text}}</div>
 				</div>
-				<div v-else-if="message.sender === `sender-1`" class="message-content">
+				<div v-else-if="message.sender === `sender-2`" class="message-content">
+					<div class="message">
+						<div class="message-inner">{{message.text}}</div></div>
 					<div class="sender">
 						<img alt="Sender's Avatar" :src="message.avatar">
 					</div>
-					<div class="message">
-						<div class="message-inner">{{message.text}}</div></div>
 				</div>
 				<div v-else class="message-content">
-					<div class="message">
-						<div class="message-inner">{{message.text}}</div></div>
 					<div class="sender">
 						<img alt="Sender's Avatar" :src="message.avatar">
 					</div>
+					<div class="message">
+						<div class="message-inner">{{message.text}}</div></div>
 				</div>
 			</div>
 			<div class="message-block sender-1 typing" v-if="typing">
@@ -67,6 +67,7 @@
 <script>
 import firebase from "firebase";
 import chrono from "chrono-node";
+import sentenceCase from "sentence-case";
 import FontAwesomeIcon from "@fortawesome/vue-fontawesome";
 import replies from "../../modules/replies";
 firebase.initializeApp({
@@ -90,18 +91,9 @@ function getOffset(el) {
 }
 export default {
 	mounted() {
-		// fetch("https://myapp-thankful-chimpanzee.cfapps.eu10.hana.ondemand.com/force-refresh-chat")
-		// 	.then(() => {
-		// 		fetch(
-		// 			"https://myapp-thankful-chimpanzee.cfapps.eu10.hana.ondemand.com/begin-session "
-		// 		)
-		// 			.then(() => {})
-		// 			.catch(() => {});
-		// 	})
-		// 	.catch(() => {});
 		const messages = firebase.database().ref("/conversation");
 		messages.once("value").then(snapshot => {
-			this.messages = snapshot.val();
+			this.messages = snapshot.val() || [];
 			if (this.messages.length === 0) {
 				this.botSays(`Hi 👋`);
 				this.botSays(`I'm Ava from Talanx`);
@@ -116,7 +108,20 @@ export default {
 			}, 1);
 		});
 		messages.on("value", snapshot => {
-			if (snapshot.val()) {
+			if (snapshot.val() && (snapshot.val() || []).length > 0) {
+				if (
+					(
+						this.messages.filter(function(obj) {
+							return !snapshot.val().some(function(obj2) {
+								return obj.value == obj2.value;
+							});
+						}) || []
+					).length > 0
+				) {
+					if (snapshot.val()[snapshot.val().length - 1].botShould) {
+						respond(snapshot.val()[snapshot.val().length - 1].text);
+					}
+				}
 				this.messages = snapshot.val();
 			}
 		});
@@ -136,7 +141,7 @@ export default {
 	},
 	methods: {
 		textChanged() {
-			if (this.currentQ === "place_name") {
+			if (this.currentQ === "place_name" && this.reply.trim().length > 0) {
 				fetch(
 					`https://myapp-thankful-chimpanzee.cfapps.eu10.hana.ondemand.com/map-autocomplete?text=${encodeURIComponent(
 						this.reply
@@ -215,7 +220,7 @@ export default {
 				recognition.start();
 				recognition.addEventListener("result", text => {
 					recognition.stop();
-					this.sendMessage(text.results[0][0].transcript);
+					this.sendMessage(sentenceCase(text.results[0][0].transcript));
 					this.speaking = false;
 				});
 			}
@@ -284,7 +289,26 @@ export default {
 							text.toLowerCase()
 						)}`
 					)
-						.then(response => response.json())
+						.then(response => {
+							if (response.ok) {
+								return response.json();
+							} else {
+								fetch(
+									"https://myapp-thankful-chimpanzee.cfapps.eu10.hana.ondemand.com/force-refresh-chat"
+								)
+									.then(() => {
+										fetch(
+											"https://myapp-thankful-chimpanzee.cfapps.eu10.hana.ondemand.com/begin-session "
+										)
+											.then(() => {})
+											.catch(() => {})
+											.finally(() => {
+												this.sendMessage("clear");
+											});
+									})
+									.catch(() => {});
+							}
+						})
 						.then(json => {
 							let result = "unknown";
 							const answers = json.answers;
@@ -488,11 +512,19 @@ main {
 			color: #fff;
 		}
 	}
-	&.sender-1 + .sender-2 {
+	&.sender-1 + .sender-2,
+	&.sender-1 + .sender-3,
+	&.sender-2 + .sender-1,
+	&.sender-2 + .sender-3,
+	&.sender-3 + .sender-1,
+	&.sender-3 + .sender-2 {
 		margin-top: 1.5rem;
 	}
-	&.sender-2 + .sender-1 {
-		margin-top: 1.5rem;
+	&.sender-3 + .sender-3 {
+		margin-top: 0.25rem;
+		.sender img {
+			visibility: hidden;
+		}
 	}
 	&.sender-2 + .sender-2 {
 		margin-top: 0.25rem;
@@ -516,7 +548,8 @@ main {
 			margin-left: 0.5rem;
 		}
 	}
-	&.sender-1.next-sender-1 {
+	&.sender-1.next-sender-1,
+	&.sender-3.next-sender-3 {
 		.message-inner {
 			border-bottom-left-radius: 15px;
 		}
@@ -537,6 +570,7 @@ main {
 		}
 	}
 	&.sender-1.next-sender-1.previous-sender-1,
+	&.sender-3.next-sender-3.previous-sender-3,
 	&.sender-2.next-sender-2.previous-sender-2 {
 		.message-inner {
 			border-top-right-radius: 15px;

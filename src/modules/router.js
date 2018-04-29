@@ -2,12 +2,17 @@ import Vue from "vue";
 import VueRouter from "vue-router";
 
 import Home from "../components/pages/Home.vue";
+import Manager from "../components/pages/Manager.vue";
 import Error404 from "../components/pages/Error404.vue";
 
 const routes = [
 	{
 		path: "/",
 		component: Home
+	},
+	{
+		path: "/manager",
+		component: Manager
 	},
 	{
 		path: "*",
