@@ -36,7 +36,9 @@
 				</div>
 				<div class="card">
 					<div><strong>Sentiment</strong></div>
-					<div>{{sentiment}}</div>
+					<div v-for="(one, id) in sentiment" :key="`sentiment_${id}`">
+						{{one}}
+					</div>
 				</div>
 			</div>
 			<div class="card-row">
@@ -44,7 +46,9 @@
 					<font-awesome-icon icon="location-arrow" />
 				</div>
 				<div class="card">
-					<img alt="Map" v-if="(data.data || {}).place_name" :src="`https://maps.googleapis.com/maps/api/staticmap?key=AIzaSyCuiZevIb1G87KAoLRSECEdWNBQ06JCMjU&center=${encodeURIComponent((data.data || {}).place_name || 'Unknown')}&size=640x350&zoom=13`">
+					<a target="_blank" :href="`https://www.google.com/maps?q=${encodeURIComponent((data.data || {}).place_name)}`">
+						<img alt="Map" v-if="(data.data || {}).place_name" :src="`https://maps.googleapis.com/maps/api/staticmap?key=AIzaSyCuiZevIb1G87KAoLRSECEdWNBQ06JCMjU&center=${encodeURIComponent((data.data || {}).place_name || 'Unknown')}&size=640x350&zoom=13`">
+					</a>
 					<div><strong>Location</strong></div>
 					<div>{{(data.data || {}).place_name || "Unknown"}}</div>
 				</div>
@@ -84,7 +88,7 @@
 					</div>
 				</div>
 			</div>
-			<div class="yes-no" style="margin-top: 1rem">
+			<div class="yes-no" v-if="undecided" style="margin-top: 1rem">
 				<button class="action-button" @click="decline">
 					<font-awesome-icon icon="times" />
 					<span>Decline</span>
@@ -131,7 +135,7 @@ const database = firebase.database();
 function getOffset(el) {
 	var _x = 0;
 	var _y = 0;
-	while (el && !isNaN(el.offsetLeft) && !isNaN(el.offsetTop)) {
+	while (el && !isNaN(el.offsetLeft) && !isNaN(eloffsetTop)) {
 		_x += el.offsetLeft - el.scrollLeft;
 		_y += el.offsetTop - el.scrollTop;
 		el = el.offsetParent;
@@ -140,7 +144,7 @@ function getOffset(el) {
 }
 export default {
 	mounted() {
-		const messages = firebase.database().ref("/");
+		const messages = firebase.database().ref(`/${localStorage.sessionID}/`);
 		messages.once("value").then(snapshot => {
 			this.data = snapshot.val() || {};
 			this.messages = snapshot.val().conversation || [];
@@ -157,6 +161,14 @@ export default {
 				this.messages = (snapshot.val() || {}).conversation || [];
 				let sentimentMessage = "";
 				this.messages.forEach(message => {
+					if (
+						[
+							"I've approved your request",
+							"I'm sorry, but I've declined your request"
+						].includes(message.text)
+					) {
+						this.undecided = false;
+					}
 					if (message.text.includes("IMAGE_URL|")) {
 						if (!this.imageUrl) {
 							const file = firebase
@@ -182,12 +194,18 @@ export default {
 					)
 						.then(response => response.json())
 						.then(json => {
-							this.sentiment =
-								parseInt(json.results.friendly.score * 100) + "%  friendly";
+							this.sentiment = [
+								parseInt(json.results.friendly.score * 100) + "%  friendly",
+								parseInt(json.results.appreciative.score * 100) + "%  appreciative",
+								parseInt(json.results.authoritative.score * 100) +
+									"%  authoritative",
+								parseInt(json.results.emotional.score * 100) + "%  emotional",
+								parseInt(json.results.exaggerating.score * 100) + "%  exaggerating"
+							];
 						})
 						.catch(() => {});
 				} else {
-					this.sentiment = "Unknown";
+					this.sentiment = ["Unknown"];
 				}
 			}
 		});
@@ -202,12 +220,13 @@ export default {
 			speaking: false,
 			messages: [],
 			imageUrl: "",
+			undecided: true,
 			voice: null,
-			sentiment: "Loading...",
+			sentiment: ["Loading..."],
 			options: [
 				"Hi Anand, sorry for keeping you waiting",
 				"Can you tell me your account number?",
-				"The insurance amount will be transferred within 7 days via Optiopay"
+				"Insurance amount of €324 has been transferred via Optiopay"
 			],
 			nextMessages: [],
 			currentQ: null,
@@ -261,7 +280,7 @@ export default {
 			this.joinConversation = true;
 		},
 		saveMessages() {
-			database.ref("/conversation").set(this.messages);
+			database.ref(`/${localStorage.sessionID}/conversation`).set(this.messages);
 		},
 		startSpeech() {
 			if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
