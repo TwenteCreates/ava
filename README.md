@@ -1,27 +1,34 @@
-# Ava
+![Ava](/ava-logo.png)
 
-## Development
+Ava is an insurance assistant chatbot app that helps Talenx pre-approve claims. Built at the Talanx hackathon in Hanover, Germany.
 
-### Installation
+## 💻 Demo
 
-Get started by cloning the repository and installing and updating dependencies.
+![Ava screenshot](/ava-screenshot.png)
 
-```bash
-yarn install
-yarn upgrade
+## 🛠️ Development
+
+To build the app, first install dependencies:
+
+```
+npm install
 ```
 
-### Development environment
+Run the frontend on http://localhost:3000:
 
-```bash
-yarn start:prettier
-yarn start:dev
+```
+npm run start:dev
 ```
 
-### Production
+To generate for deployment:
 
-Build and deploy to Firebase hosting.
-
-```bash
-yarn deploy
 ```
+npm run deploy
+```
+
+For the backend, simply run the `app.py` file using Python from the `backend` folder.
+
+## 📄 License
+
+- Code: [MIT](/LICENSE)
+- Logo and assets: [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)
